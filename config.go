@@ -1,4 +1,4 @@
-package di
+package odi
 
 type Config struct {
 	Resolver string
