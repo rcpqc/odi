@@ -1,0 +1,11 @@
+object: object_a
+arg0: 123
+arg1: fafdsa
+arg2: [1,2,3]
+ifaces:
+  - object: object_b
+    xx: 123
+    yy: aaf
+    zz: [4,5,6]
+  - object: object_c
+    c: abcde
