@@ -18,7 +18,7 @@ func (o *Resolver) invoke(node *yaml.Node) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := o.inject(reflect.ValueOf(object), node); err != nil {
+	if err := o.inject(reflect.ValueOf(object), node, nil); err != nil {
 		return nil, err
 	}
 	if iface, ok := object.(types.Resolvable); ok {

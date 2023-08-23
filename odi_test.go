@@ -17,10 +17,12 @@ type Interface1 interface {
 }
 
 type ObjectA struct {
-	Arg0   int64
-	Arg1   string
-	Arg2   []uint
-	Ifaces []Interface1 `yaml:"ifaces"`
+	Arg0    int64
+	Arg1    string
+	Arg2    []uint
+	Ifaces  []Interface1 `yaml:"ifaces"`
+	ObjectD `yaml:",inline"`
+	Other   map[string]interface{} `yaml:",inline"`
 }
 
 type ObjectB struct {
@@ -45,6 +47,10 @@ func (o *ObjectC) Foo() error {
 	return nil
 }
 
+type ObjectD struct {
+	KK string `yaml:"kk"`
+}
+
 func TestResolve(t *testing.T) {
 	tests := []struct {
 		name string
@@ -63,6 +69,8 @@ func TestResolve(t *testing.T) {
 					&ObjectB{XX: 123, YY: "aaf", ZZ: []uint{4, 5, 6}, WW: [2]float32{1.1, 4.3}},
 					&ObjectC{C: "abcde", E: map[string]int{"a": 3}, F: map[bool]string{true: "T"}},
 				},
+				ObjectD: ObjectD{KK: "kk123"},
+				Other:   map[string]interface{}{"object": "object_a", "arg9": 6, "arg10": "t3"},
 			},
 		},
 	}
@@ -74,7 +82,7 @@ func TestResolve(t *testing.T) {
 				t.Error(err)
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Resolve() = %v, want %v", got, tt.want)
+				t.Errorf("Resolve() \ngot:  %v\nwant: %v", got, tt.want)
 			}
 		})
 	}

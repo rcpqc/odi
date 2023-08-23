@@ -12,7 +12,7 @@ type Unmarshaler interface{ UnmarshalYAML(value *yaml.Node) error }
 
 var UnmarshalerType = reflect.TypeOf((*Unmarshaler)(nil)).Elem()
 
-var injectors [types.MaxKinds]func(o *Resolver, rv reflect.Value, node *yaml.Node) error
+var injectors [types.MaxKinds]func(o *Resolver, rv reflect.Value, node *yaml.Node, injecteds map[string]struct{}) error
 
 func init() {
 	injectors[reflect.Bool] = (*Resolver).injectBasic
@@ -40,7 +40,7 @@ func init() {
 	injectors[reflect.Struct] = (*Resolver).injectStruct
 }
 
-func (o *Resolver) inject(rv reflect.Value, node *yaml.Node) error {
+func (o *Resolver) inject(rv reflect.Value, node *yaml.Node, injecteds map[string]struct{}) error {
 	if reflect.PointerTo(rv.Type()).Implements(UnmarshalerType) && rv.CanAddr() {
 		return rv.Addr().Interface().(Unmarshaler).UnmarshalYAML(node)
 	}
@@ -48,17 +48,17 @@ func (o *Resolver) inject(rv reflect.Value, node *yaml.Node) error {
 	if injector == nil {
 		return fmt.Errorf("not support kind: %v", rv.Kind())
 	}
-	return injector(o, rv, node)
+	return injector(o, rv, node, injecteds)
 }
 
-func (o *Resolver) injectPointer(rv reflect.Value, node *yaml.Node) error {
+func (o *Resolver) injectPointer(rv reflect.Value, node *yaml.Node, injecteds map[string]struct{}) error {
 	if rv.IsNil() {
 		rv.Set(reflect.New(rv.Type().Elem()))
 	}
-	return o.inject(rv.Elem(), node)
+	return o.inject(rv.Elem(), node, nil)
 }
 
-func (o *Resolver) injectArray(rv reflect.Value, node *yaml.Node) error {
+func (o *Resolver) injectArray(rv reflect.Value, node *yaml.Node, injecteds map[string]struct{}) error {
 	nodes := []yaml.Node{}
 	if err := node.Decode(&nodes); err != nil {
 		return err
@@ -66,7 +66,7 @@ func (o *Resolver) injectArray(rv reflect.Value, node *yaml.Node) error {
 	rv.Set(reflect.New(rv.Type()).Elem())
 	for i, node := range nodes {
 		elem := reflect.New(rv.Type().Elem()).Elem()
-		if err := o.inject(elem, &node); err != nil {
+		if err := o.inject(elem, &node, nil); err != nil {
 			return err
 		}
 		rv.Index(i).Set(elem)
@@ -74,7 +74,7 @@ func (o *Resolver) injectArray(rv reflect.Value, node *yaml.Node) error {
 	return nil
 }
 
-func (o *Resolver) injectSlice(rv reflect.Value, node *yaml.Node) error {
+func (o *Resolver) injectSlice(rv reflect.Value, node *yaml.Node, injecteds map[string]struct{}) error {
 	nodes := []yaml.Node{}
 	if err := node.Decode(&nodes); err != nil {
 		return err
@@ -82,7 +82,7 @@ func (o *Resolver) injectSlice(rv reflect.Value, node *yaml.Node) error {
 	rv.Set(reflect.MakeSlice(rv.Type(), len(nodes), len(nodes)))
 	for i, node := range nodes {
 		elem := reflect.New(rv.Type().Elem()).Elem()
-		if err := o.inject(elem, &node); err != nil {
+		if err := o.inject(elem, &node, nil); err != nil {
 			return err
 		}
 		rv.Index(i).Set(elem)
@@ -90,7 +90,7 @@ func (o *Resolver) injectSlice(rv reflect.Value, node *yaml.Node) error {
 	return nil
 }
 
-func (o *Resolver) injectMap(rv reflect.Value, node *yaml.Node) error {
+func (o *Resolver) injectMap(rv reflect.Value, node *yaml.Node, injecteds map[string]struct{}) error {
 	nodes := reflect.MakeMapWithSize(reflect.MapOf(rv.Type().Key(), reflect.TypeOf(yaml.Node{})), rv.Len())
 	if err := node.Decode(nodes.Interface()); err != nil {
 		return err
@@ -100,8 +100,13 @@ func (o *Resolver) injectMap(rv reflect.Value, node *yaml.Node) error {
 	for iter.Next() {
 		key := iter.Key()
 		val := iter.Value().Interface().(yaml.Node)
+		if injecteds != nil && key.Type() == types.String {
+			if _, ok := injecteds[key.String()]; ok {
+				continue
+			}
+		}
 		elem := reflect.New(rv.Type().Elem()).Elem()
-		if err := o.inject(elem, &val); err != nil {
+		if err := o.inject(elem, &val, nil); err != nil {
 			return err
 		}
 		rv.SetMapIndex(key, elem)
@@ -109,11 +114,18 @@ func (o *Resolver) injectMap(rv reflect.Value, node *yaml.Node) error {
 	return nil
 }
 
-func (o *Resolver) injectStruct(rv reflect.Value, node *yaml.Node) error {
+func (o *Resolver) injectStruct(rv reflect.Value, node *yaml.Node, injecteds map[string]struct{}) error {
 	nodes := map[string]yaml.Node{}
 	if err := node.Decode(&nodes); err != nil {
 		return err
 	}
+	if injecteds == nil {
+		injecteds = map[string]struct{}{}
+	}
+
+	var stuInlines []reflect.Value
+	var mapInline reflect.Value
+
 	for i := 0; i < rv.NumField(); i++ {
 		vfield := rv.Field(i)
 		tfield := rv.Type().Field(i)
@@ -124,9 +136,21 @@ func (o *Resolver) injectStruct(rv reflect.Value, node *yaml.Node) error {
 		if alias == "-" {
 			continue
 		}
+		// 已注入
+		if _, ok := injecteds[alias]; ok {
+			continue
+		}
 		if inline {
-			if err := o.inject(vfield, node); err != nil {
-				return err
+			t := tfield.Type
+			if t.Kind() == reflect.Pointer {
+				t = t.Elem()
+			}
+			if t.Kind() == reflect.Map && t.Key() == types.String {
+				mapInline = vfield
+			} else if t.Kind() == reflect.Struct {
+				stuInlines = append(stuInlines, vfield)
+			} else {
+				return fmt.Errorf("unsupported inline type=%v", t)
 			}
 			continue
 		}
@@ -134,14 +158,27 @@ func (o *Resolver) injectStruct(rv reflect.Value, node *yaml.Node) error {
 		if !ok {
 			continue
 		}
-		if err := o.inject(vfield, &node); err != nil {
+		if err := o.inject(vfield, &node, nil); err != nil {
+			return err
+		}
+		injecteds[alias] = struct{}{}
+	}
+
+	for _, vfield := range stuInlines {
+		if err := o.inject(vfield, node, injecteds); err != nil {
+			return err
+		}
+	}
+
+	if mapInline.IsValid() {
+		if err := o.inject(mapInline, node, injecteds); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (o *Resolver) injectBasic(rv reflect.Value, node *yaml.Node) error {
+func (o *Resolver) injectBasic(rv reflect.Value, node *yaml.Node, injecteds map[string]struct{}) error {
 	elemPtr := reflect.New(rv.Type())
 	if err := node.Decode(elemPtr.Interface()); err != nil {
 		return err
@@ -150,9 +187,9 @@ func (o *Resolver) injectBasic(rv reflect.Value, node *yaml.Node) error {
 	return nil
 }
 
-func (o *Resolver) injectInterface(rv reflect.Value, node *yaml.Node) error {
+func (o *Resolver) injectInterface(rv reflect.Value, node *yaml.Node, injecteds map[string]struct{}) error {
 	if rv.Type() == types.Any {
-		return o.injectBasic(rv, node)
+		return o.injectBasic(rv, node, nil)
 	}
 	object, err := o.invoke(node)
 	if err != nil {
