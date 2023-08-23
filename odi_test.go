@@ -27,6 +27,7 @@ type ObjectB struct {
 	XX int64
 	YY string
 	ZZ []uint
+	WW [2]float32
 }
 
 func (o *ObjectB) Foo() error {
@@ -36,6 +37,8 @@ func (o *ObjectB) Foo() error {
 type ObjectC struct {
 	C any
 	d any
+	E map[string]int
+	F map[bool]string
 }
 
 func (o *ObjectC) Foo() error {
@@ -53,10 +56,13 @@ func TestResolve(t *testing.T) {
 			name: "case_1",
 			file: "data/1.yaml",
 			want: &ObjectA{
-				Arg0:   123,
-				Arg1:   "fafdsa",
-				Arg2:   []uint{1, 2, 3},
-				Ifaces: []Interface1{&ObjectB{XX: 123, YY: "aaf", ZZ: []uint{4, 5, 6}}, &ObjectC{C: "abcde"}},
+				Arg0: 123,
+				Arg1: "fafdsa",
+				Arg2: []uint{1, 2, 3},
+				Ifaces: []Interface1{
+					&ObjectB{XX: 123, YY: "aaf", ZZ: []uint{4, 5, 6}, WW: [2]float32{1.1, 4.3}},
+					&ObjectC{C: "abcde", E: map[string]int{"a": 3}, F: map[bool]string{true: "T"}},
+				},
 			},
 		},
 	}

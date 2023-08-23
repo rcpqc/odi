@@ -31,7 +31,7 @@ func init() {
 	injectors[reflect.Float64] = (*Resolver).injectBasic
 	injectors[reflect.Complex64] = (*Resolver).injectBasic
 	injectors[reflect.Complex128] = (*Resolver).injectBasic
-	injectors[reflect.Array] = (*Resolver).injectSlice
+	injectors[reflect.Array] = (*Resolver).injectArray
 	injectors[reflect.Interface] = (*Resolver).injectInterface
 	injectors[reflect.Map] = (*Resolver).injectMap
 	injectors[reflect.Pointer] = (*Resolver).injectPointer
@@ -41,6 +41,9 @@ func init() {
 }
 
 func (o *Resolver) inject(rv reflect.Value, node *yaml.Node) error {
+	if reflect.PointerTo(rv.Type()).Implements(UnmarshalerType) && rv.CanAddr() {
+		return rv.Addr().Interface().(Unmarshaler).UnmarshalYAML(node)
+	}
 	injector := injectors[rv.Kind()]
 	if injector == nil {
 		return fmt.Errorf("not support kind: %v", rv.Kind())
@@ -53,6 +56,22 @@ func (o *Resolver) injectPointer(rv reflect.Value, node *yaml.Node) error {
 		rv.Set(reflect.New(rv.Type().Elem()))
 	}
 	return o.inject(rv.Elem(), node)
+}
+
+func (o *Resolver) injectArray(rv reflect.Value, node *yaml.Node) error {
+	nodes := []yaml.Node{}
+	if err := node.Decode(&nodes); err != nil {
+		return err
+	}
+	rv.Set(reflect.New(rv.Type()).Elem())
+	for i, node := range nodes {
+		elem := reflect.New(rv.Type().Elem()).Elem()
+		if err := o.inject(elem, &node); err != nil {
+			return err
+		}
+		rv.Index(i).Set(elem)
+	}
+	return nil
 }
 
 func (o *Resolver) injectSlice(rv reflect.Value, node *yaml.Node) error {
@@ -72,27 +91,25 @@ func (o *Resolver) injectSlice(rv reflect.Value, node *yaml.Node) error {
 }
 
 func (o *Resolver) injectMap(rv reflect.Value, node *yaml.Node) error {
-	nodes := map[string]yaml.Node{}
-	if err := node.Decode(&nodes); err != nil {
+	nodes := reflect.MakeMapWithSize(reflect.MapOf(rv.Type().Key(), reflect.TypeOf(yaml.Node{})), rv.Len())
+	if err := node.Decode(nodes.Interface()); err != nil {
 		return err
 	}
 	rv.Set(reflect.MakeMap(rv.Type()))
-	for key, node := range nodes {
+	iter := nodes.MapRange()
+	for iter.Next() {
+		key := iter.Key()
+		val := iter.Value().Interface().(yaml.Node)
 		elem := reflect.New(rv.Type().Elem()).Elem()
-		if err := o.inject(elem, &node); err != nil {
+		if err := o.inject(elem, &val); err != nil {
 			return err
 		}
-		rv.SetMapIndex(reflect.ValueOf(key), elem)
+		rv.SetMapIndex(key, elem)
 	}
 	return nil
 }
 
 func (o *Resolver) injectStruct(rv reflect.Value, node *yaml.Node) error {
-
-	if reflect.PointerTo(rv.Type()).Implements(UnmarshalerType) && rv.CanAddr() {
-		return rv.Addr().Interface().(Unmarshaler).UnmarshalYAML(node)
-	}
-
 	nodes := map[string]yaml.Node{}
 	if err := node.Decode(&nodes); err != nil {
 		return err
@@ -141,8 +158,9 @@ func (o *Resolver) injectInterface(rv reflect.Value, node *yaml.Node) error {
 	if err != nil {
 		return err
 	}
-	if reflect.ValueOf(object).Type().Implements(rv.Type()) {
-		rv.Set(reflect.ValueOf(object))
+	if !reflect.ValueOf(object).Type().Implements(rv.Type()) {
+		return fmt.Errorf("the injected object does not implement the interface(%v)", rv.Type())
 	}
+	rv.Set(reflect.ValueOf(object))
 	return nil
 }

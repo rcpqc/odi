@@ -21,6 +21,14 @@ func clonePtr(rv reflect.Value) reflect.Value {
 	return ptr
 }
 
+func cloneArray(rv reflect.Value) reflect.Value {
+	arr := reflect.New(rv.Type()).Elem()
+	for i := 0; i < rv.Len(); i++ {
+		arr.Index(i).Set(clone(rv.Index(i)))
+	}
+	return arr
+}
+
 func cloneSlice(rv reflect.Value) reflect.Value {
 	if rv.IsNil() {
 		return rv
@@ -74,7 +82,7 @@ func clone(rv reflect.Value) reflect.Value {
 		return cloneString(rv)
 	case reflect.Ptr:
 		return clonePtr(rv)
-	case reflect.Array, reflect.Slice:
+	case reflect.Slice:
 		return cloneSlice(rv)
 	case reflect.Map:
 		return cloneMap(rv)
@@ -82,6 +90,8 @@ func clone(rv reflect.Value) reflect.Value {
 		return cloneStruct(rv)
 	case reflect.Interface:
 		return cloneInterface(rv)
+	case reflect.Array:
+		return cloneArray(rv)
 	default:
 		return rv
 	}
