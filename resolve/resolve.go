@@ -1,23 +1,28 @@
 package resolve
 
 import (
-	"github.com/rcpqc/odi/resolve/yaml"
-	"github.com/rcpqc/odi/types"
+	"context"
+	"reflect"
 )
 
-var Resolve = resolve
+type Option func(ctx context.Context) context.Context
 
-// NewResolver 创建resolver
-func NewResolver(name string, key string) types.Resolver {
-	switch name {
-	case "yaml":
-		return yaml.NewResolver(key)
-	default:
-		return nil
-	}
+func WithKey(key string) Option {
+	return func(ctx context.Context) context.Context { return ctxWithKey(ctx, key) }
 }
 
-// resolve 解析配置
-func resolve(resolver types.Resolver, data []byte) (any, error) {
-	return resolver.Resolve(data)
+func Invoke(src any, opts ...Option) (any, error) {
+	ctx := context.Background()
+	for _, opt := range opts {
+		ctx = opt(ctx)
+	}
+	return invoke(ctx, reflect.ValueOf(src))
+}
+
+func Inject(dst, src any, opts ...Option) error {
+	ctx := context.Background()
+	for _, opt := range opts {
+		ctx = opt(ctx)
+	}
+	return inject(ctx, reflect.ValueOf(dst), reflect.ValueOf(src))
 }

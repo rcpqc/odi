@@ -3,9 +3,10 @@ package dispose
 import (
 	"reflect"
 	"strings"
-
-	"github.com/rcpqc/odi/types"
 )
+
+// IDispose custom dispose interface for an object
+type IDispose interface{ Dispose() error }
 
 var Dispose = dispose
 
@@ -43,7 +44,7 @@ func disposeStruct(rv reflect.Value) error {
 		if !rv.Field(i).CanSet() {
 			continue
 		}
-		tag := rv.Type().Field(i).Tag.Get("yaml")
+		tag := rv.Type().Field(i).Tag.Get("odi")
 		tag = strings.Split(tag, ",")[0]
 		if tag == "-" {
 			continue
@@ -63,11 +64,11 @@ func disposeInterface(rv reflect.Value) error {
 	if err := dispose(rv.Elem()); err != nil {
 		anyerr = err
 	}
-	iface, ok := rv.Interface().(types.Disposable)
+	iface, ok := rv.Interface().(IDispose)
 	if !ok {
 		return anyerr
 	}
-	if err := iface.OnDispose(); err != nil && anyerr == nil {
+	if err := iface.Dispose(); err != nil && anyerr == nil {
 		anyerr = err
 	}
 	return anyerr
