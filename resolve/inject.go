@@ -90,7 +90,7 @@ func injectMap(ctx context.Context, dst, src reflect.Value) error {
 	}
 	dst.Set(reflect.MakeMap(dst.Type()))
 	iter := src.MapRange()
-	ignore := ctxIgnore(ctx)
+	ignore := ctxGetIgnore(ctx)
 	for iter.Next() {
 		srcKey, srcVal := iter.Key(), iter.Value()
 		// for inline

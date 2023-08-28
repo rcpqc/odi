@@ -14,7 +14,7 @@ import (
 type IResolve interface{ Resolve(src any) error }
 
 func invoke(ctx context.Context, src reflect.Value) (any, error) {
-	kind, err := classify(src, ctxKey(ctx))
+	kind, err := classify(src, ctxGetObjectKey(ctx))
 	if err != nil {
 		return nil, errs.Newf("classify err: %v", err)
 	}

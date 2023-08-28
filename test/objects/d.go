@@ -1,5 +1,5 @@
 package objects
 
 type D struct {
-	KK string `yaml:"kk" odi:"kk"`
+	KK string `yaml:"kk"`
 }

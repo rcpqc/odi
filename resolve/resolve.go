@@ -7,8 +7,12 @@ import (
 
 type Option func(ctx context.Context) context.Context
 
-func WithKey(key string) Option {
-	return func(ctx context.Context) context.Context { return ctxWithKey(ctx, key) }
+func WithObjKey(key string) Option {
+	return func(ctx context.Context) context.Context { return ctxWithObjectKey(ctx, key) }
+}
+
+func WithTagKey(key string) Option {
+	return func(ctx context.Context) context.Context { return ctxWithTagKey(ctx, key) }
 }
 
 func Invoke(src any, opts ...Option) (any, error) {

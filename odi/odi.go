@@ -1,8 +1,6 @@
 package odi
 
 import (
-	"reflect"
-
 	"github.com/rcpqc/odi/container"
 	"github.com/rcpqc/odi/dispose"
 	"github.com/rcpqc/odi/resolve"
@@ -15,13 +13,12 @@ func Provide(kind string, constructor func() any) {
 
 // Resolve parse and construct an new object by source data
 func Resolve(data any, opts ...resolve.Option) (any, error) {
-	opts = append(opts, resolve.WithKey("object"))
 	return resolve.Invoke(data, opts...)
 }
 
-// Dispose release an object and callback IDispose interface
-func Dispose(object any) error {
-	return dispose.Dispose(reflect.ValueOf(object))
+// Dispose destory an object and callback IDispose interface
+func Dispose(object any, opts ...dispose.Option) error {
+	return dispose.Destory(object, opts...)
 }
 
 type IResolve = resolve.IResolve

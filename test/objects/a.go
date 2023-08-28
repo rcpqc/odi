@@ -5,10 +5,10 @@ type Interface1 interface {
 }
 
 type A struct {
-	Other   map[string]interface{} `yaml:",inline" odi:",inline"`
+	Other   map[string]interface{} `yaml:",inline"`
 	Arg0    int64
 	Arg1    string
 	Arg2    []uint
-	ObjectD D            `yaml:",inline" odi:",inline"`
+	ObjectD D            `yaml:",inline"`
 	Ifaces  []Interface1 `yaml:"ifaces"`
 }

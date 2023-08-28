@@ -34,10 +34,10 @@ func inlineTypeCheck(t reflect.Type) bool {
 		(t.Kind() == reflect.Map && t.Key() == types.String)
 }
 
-func analyzeFields(t reflect.Type) []*Field {
+func analyzeFields(tagKey string, t reflect.Type) []*Field {
 	fields := []*Field{}
 	for i := 0; i < t.NumField(); i++ {
-		tags := strings.Split(t.Field(i).Tag.Get("odi"), ",")
+		tags := strings.Split(t.Field(i).Tag.Get(tagKey), ",")
 		if tags[0] == "-" {
 			continue
 		}
@@ -76,13 +76,12 @@ func injectStruct(ctx context.Context, dst, src reflect.Value) error {
 	if src.Kind() != reflect.Map || src.Type().Key() != types.String {
 		return errs.Newf("expect map[string] but %v", src.Kind())
 	}
-
-	ignore := ctxIgnore(ctx)
+	ignore := ctxGetIgnore(ctx)
 	if ignore == nil {
 		ignore = map[string]struct{}{}
 	}
-
-	fields := analyzeFields(dst.Type())
+	tagKey := ctxGetTagKey(ctx)
+	fields := analyzeFields(tagKey, dst.Type())
 	for _, field := range fields {
 		vfield := dst.Field(field.Index)
 		tfield := field.Type

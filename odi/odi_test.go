@@ -2,10 +2,12 @@ package odi
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"reflect"
 	"testing"
 
+	"github.com/rcpqc/odi/resolve"
 	"github.com/rcpqc/odi/test/objects"
 	"gopkg.in/yaml.v3"
 )
@@ -50,7 +52,7 @@ func TestResolve(t *testing.T) {
 			if err := yaml.Unmarshal(bytes, &data); err != nil {
 				t.Fatal(err)
 			}
-			got, err := Resolve(data)
+			got, err := Resolve(data, resolve.WithTagKey("yaml"))
 			if err != nil {
 				t.Error(err)
 			}
@@ -87,7 +89,11 @@ func TestDispose(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := Dispose(obj); err.Error() != tt.err.Error() {
+			log.Print(obj)
+			err = Dispose(obj)
+			if (err == nil && tt.err != nil) ||
+				(err != nil && tt.err == nil) ||
+				(err != nil && tt.err != nil && err.Error() != tt.err.Error()) {
 				t.Errorf("Dispose() \ngot:  %v\nwant: %v", err, tt.err)
 			}
 		})
