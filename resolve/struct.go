@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/rcpqc/odi/convert"
 	"github.com/rcpqc/odi/errs"
-	"github.com/rcpqc/odi/types"
 )
 
 var firstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
@@ -21,17 +21,10 @@ func snake(s string) string {
 }
 
 type Field struct {
-	Index           int
-	Type            reflect.Type
-	Name            string
-	Inline          bool
-	InlineTypeValid bool
-}
-
-func inlineTypeCheck(t reflect.Type) bool {
-	return (t.Kind() == reflect.Struct) ||
-		(t.Kind() == reflect.Pointer && t.Elem().Kind() == reflect.Struct) ||
-		(t.Kind() == reflect.Map && t.Key() == types.String)
+	Index  int
+	Type   reflect.Type
+	Name   string
+	Inline bool
 }
 
 func analyzeFields(tagKey string, t reflect.Type) []*Field {
@@ -48,7 +41,6 @@ func analyzeFields(tagKey string, t reflect.Type) []*Field {
 		for i := 1; i < len(tags); i++ {
 			if tags[i] == "inline" {
 				field.Inline = true
-				field.InlineTypeValid = inlineTypeCheck(field.Type)
 			}
 		}
 		fields = append(fields, field)
@@ -72,59 +64,57 @@ func analyzeFields(tagKey string, t reflect.Type) []*Field {
 	return orders
 }
 
-func cloneMap(src reflect.Value, ignores map[string]struct{}) reflect.Value {
-	m := reflect.MakeMap(src.Type())
+// convertSource convert map key to string
+func convertSource(src reflect.Value) reflect.Value {
+	m := map[string]interface{}{}
 	for iter := src.MapRange(); iter.Next(); {
-		m.SetMapIndex(iter.Key(), iter.Value())
+		if s, err := convert.String(iter.Key()); err == nil {
+			m[s] = iter.Value().Interface()
+		}
 	}
-	for name := range ignores {
-		m.SetMapIndex(reflect.ValueOf(name), reflect.Value{})
-	}
-	return m
+	return reflect.ValueOf(m)
 }
 
-func injectStructInternal(ctx context.Context, dst, src reflect.Value, ignores map[string]struct{}) error {
-	if ignores == nil {
-		ignores = map[string]struct{}{}
-	}
+func injectStructInternal(ctx context.Context, dst, src reflect.Value) error {
 	tagKey := ctxGetTagKey(ctx)
 	fields := analyzeFields(tagKey, dst.Type())
 	for _, field := range fields {
-		if _, ok := ignores[field.Name]; ok {
-			continue
-		}
 		vfield := dst.Field(field.Index)
 		tfield := field.Type
 		if !vfield.CanSet() {
 			continue
 		}
-		if field.Inline {
-			if field.Type.Kind() == reflect.Map && field.Type.Key().Kind() == reflect.String {
-				if err := inject(ctx, vfield, cloneMap(src, ignores)); err != nil {
-					return errs.New(err).Prefix("." + field.Name)
-				}
-			} else if field.Type.Kind() == reflect.Struct {
-				if err := injectStructInternal(ctx, vfield, src, ignores); err != nil {
-					return errs.New(err).Prefix("." + field.Name)
-				}
-			} else if field.Type.Kind() == reflect.Pointer && field.Type.Elem().Kind() == reflect.Struct {
-				if err := injectStructInternal(ctx, vfield, src, ignores); err != nil {
-					return errs.New(err).Prefix("." + field.Name)
-				}
-			} else {
-				return errs.Newf("illegal inline type(%v) expect struct or map[string]", tfield).Prefix("." + field.Name)
+		// direct injection of non-inline fields
+		if !field.Inline {
+			key := reflect.ValueOf(field.Name)
+			val := src.MapIndex(key)
+			if !val.IsValid() {
+				continue
 			}
+			if err := inject(ctx, vfield, val); err != nil {
+				return errs.New(err).Prefix("." + field.Name)
+			}
+			// delete injected fields to prevent repeated injection of inline fields
+			src.SetMapIndex(key, reflect.Value{})
 			continue
 		}
-		key := reflect.ValueOf(field.Name)
-		val := src.MapIndex(key)
-		if !val.IsValid() {
-			continue
+		// inline fields are injected according to type (map[string]any/struct/*struct)
+		if field.Type.Kind() == reflect.Map && field.Type.Key().Kind() == reflect.String {
+			if err := inject(ctx, vfield, src); err != nil {
+				return errs.New(err).Prefix("." + field.Name)
+			}
+		} else if field.Type.Kind() == reflect.Struct {
+			if err := injectStructInternal(ctx, vfield, src); err != nil {
+				return errs.New(err).Prefix("." + field.Name)
+			}
+		} else if field.Type.Kind() == reflect.Pointer && field.Type.Elem().Kind() == reflect.Struct {
+			if err := injectStructInternal(ctx, vfield, src); err != nil {
+				return errs.New(err).Prefix("." + field.Name)
+			}
+		} else {
+			return errs.Newf("illegal inline type(%v) expect struct or map[string]", tfield).Prefix("." + field.Name)
 		}
-		if err := inject(ctx, vfield, val); err != nil {
-			return errs.New(err).Prefix("." + field.Name)
-		}
-		ignores[field.Name] = struct{}{}
+		continue
 	}
 	return nil
 }
@@ -133,6 +123,6 @@ func injectStruct(ctx context.Context, dst, src reflect.Value) error {
 	if src.Kind() != reflect.Map {
 		return errs.Newf("expect map but %v", src.Kind())
 	}
-	injectStructInternal(ctx, dst, src, nil)
+	injectStructInternal(ctx, dst, convertSource(src))
 	return nil
 }
