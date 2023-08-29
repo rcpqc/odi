@@ -34,5 +34,5 @@ type Error struct {
 
 // Error error interface
 func (o *Error) Error() string {
-	return fmt.Sprintf("%s: %s", o.Router, o.Message)
+	return fmt.Sprintf("_%s: %s", o.Router, o.Message)
 }

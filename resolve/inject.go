@@ -10,6 +10,11 @@ import (
 	"github.com/rcpqc/odi/types"
 )
 
+// IResolve custom resolve interface for an object
+type IResolve interface{ Resolve(src any) error }
+
+var IResolveType = reflect.TypeOf((*IResolve)(nil)).Elem()
+
 var injectors [types.MaxKinds]func(ctx context.Context, dst, src reflect.Value) error
 
 func init() {
@@ -37,14 +42,21 @@ func init() {
 }
 
 func inject(ctx context.Context, dst, src reflect.Value) error {
+	if src.IsValid() && src.Type() == types.Any {
+		src = src.Elem()
+	}
+	if !src.IsValid() {
+		return nil
+	}
 	injector := injectors[dst.Kind()]
 	if injector == nil {
 		return errs.Newf("not support kind: %v", dst.Kind())
 	}
-	if src.IsValid() && src.Type() == types.Any {
-		src = src.Elem()
+	err := injector(ctx, dst, src)
+	if dst.CanAddr() && reflect.PointerTo(dst.Type()).Implements(IResolveType) {
+		err = dst.Addr().Interface().(IResolve).Resolve(src.Interface())
 	}
-	return injector(ctx, dst, src)
+	return err
 }
 
 func injectPointer(ctx context.Context, dst, src reflect.Value) error {
@@ -90,16 +102,8 @@ func injectMap(ctx context.Context, dst, src reflect.Value) error {
 	}
 	dst.Set(reflect.MakeMap(dst.Type()))
 	iter := src.MapRange()
-	ignore := ctxGetIgnore(ctx)
 	for iter.Next() {
 		srcKey, srcVal := iter.Key(), iter.Value()
-		// for inline
-		if ignore != nil && srcKey.Type() == types.String {
-			if _, ok := ignore[srcKey.String()]; ok {
-				continue
-			}
-		}
-
 		dstKey, dstVal := reflect.New(dst.Type().Key()).Elem(), reflect.New(dst.Type().Elem()).Elem()
 		if err := inject(ctx, dstKey, srcKey); err != nil {
 			return errs.New(err).Prefix(fmt.Sprintf("[%s]", dstKey.String()))

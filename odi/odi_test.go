@@ -30,15 +30,15 @@ func TestResolve(t *testing.T) {
 			name: "case_1",
 			file: "../test/cases/1.yaml",
 			want: &objects.A{
-				Arg0: 123,
-				Arg1: "fafdsa",
-				Arg2: []uint{1, 2, 3},
+				Other:   map[string]interface{}{"object": "object_a", "arg9": 6, "arg10": "t3"},
+				Arg0:    123,
+				Arg1:    "fafdsa",
+				Arg2:    []uint{1, 2, 3},
+				ObjectD: objects.D{KK: "kk123"},
 				Ifaces: []objects.Interface1{
 					&objects.B{XX: 123, YY: "aaf", ZZ: []uint{4, 5, 6}, WW: [2]float32{1.1, 4.3}},
 					&objects.C{C: "abcde", E: map[string]int{"a": 3}, F: map[bool]string{true: "T"}},
 				},
-				ObjectD: objects.D{KK: "kk123"},
-				Other:   map[string]interface{}{"object": "object_a", "arg9": 6, "arg10": "t3"},
 			},
 		},
 	}

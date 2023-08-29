@@ -10,11 +10,8 @@ import (
 	"github.com/rcpqc/odi/types"
 )
 
-// IResolve custom resolve interface for an object
-type IResolve interface{ Resolve(src any) error }
-
 func invoke(ctx context.Context, src reflect.Value) (any, error) {
-	kind, err := classify(src, ctxGetObjectKey(ctx))
+	kind, err := classify(ctx, src)
 	if err != nil {
 		return nil, errs.Newf("classify err: %v", err)
 	}
@@ -22,22 +19,23 @@ func invoke(ctx context.Context, src reflect.Value) (any, error) {
 	if err != nil {
 		return nil, errs.Newf("container create err: %v", err)
 	}
-	if iface, ok := object.(IResolve); ok {
-		if err := iface.Resolve(src.Interface()); err != nil {
-			return nil, err
-		}
-	} else {
-		if err := inject(ctx, reflect.ValueOf(object), src); err != nil {
-			return nil, err
-		}
+	if err := inject(ctx, reflect.ValueOf(object), src); err != nil {
+		return nil, err
 	}
 	return object, nil
 }
 
-func classify(src reflect.Value, key string) (string, error) {
-	if src.Kind() != reflect.Map || src.Type().Key() != types.String {
-		return "", fmt.Errorf("expected map[string]any")
+func classify(ctx context.Context, src reflect.Value) (string, error) {
+	if !src.IsValid() {
+		return "", fmt.Errorf("data is nil")
 	}
+	if src.Type() == types.Any {
+		src = src.Elem()
+	}
+	if src.Kind() != reflect.Map {
+		return "", fmt.Errorf("expect map but %v", src.Kind())
+	}
+	key := ctxGetObjectKey(ctx)
 	rkind := src.MapIndex(reflect.ValueOf(key))
 	if !rkind.IsValid() {
 		return "", fmt.Errorf("not exist kind field(%s)", key)
