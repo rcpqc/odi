@@ -27,9 +27,10 @@ func main() {
 	defer pprof.StopCPUProfile()
 	source := config.ReadYaml("test/cases/1.yaml")
 	opts := []resolve.Option{resolve.WithTagKey("yaml")}
-	_, err := odi.Resolve(source, opts...)
+	obj, err := odi.Resolve(source, opts...)
+	log.Print(obj)
 	log.Print(err)
-	n := 1000
+	n := 100000
 	st := time.Now()
 	for i := 0; i < n; i++ {
 		_, _ = odi.Resolve(source, opts...)

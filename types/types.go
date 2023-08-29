@@ -2,6 +2,7 @@ package types
 
 import (
 	"reflect"
+	"sync"
 )
 
 const MaxKinds = 32
@@ -30,3 +31,27 @@ var (
 	String = reflect.TypeOf((*string)(nil)).Elem()
 	Bytes  = reflect.TypeOf((*[]byte)(nil)).Elem()
 )
+
+var cache sync.Map
+
+type typeKey struct {
+	typ reflect.Type
+	tag string
+}
+
+func LoadOrCreate(typ reflect.Type, tag string, constructor func() interface{}) (interface{}, bool) {
+	tk := typeKey{typ, tag}
+	if f, ok := cache.Load(tk); ok {
+		return f.(func() interface{})(), true
+	}
+	var once sync.Once
+	var res interface{}
+	f, loaded := cache.LoadOrStore(tk, func() interface{} {
+		once.Do(func() {
+			res = constructor()
+			cache.Store(tk, func() interface{} { return res })
+		})
+		return res
+	})
+	return f.(func() interface{})(), loaded
+}

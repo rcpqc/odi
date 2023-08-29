@@ -3,66 +3,11 @@ package resolve
 import (
 	"context"
 	"reflect"
-	"regexp"
-	"strings"
 
 	"github.com/rcpqc/odi/convert"
 	"github.com/rcpqc/odi/errs"
+	"github.com/rcpqc/odi/types"
 )
-
-var firstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
-var allCap = regexp.MustCompile("([a-z0-9])([A-Z])")
-
-// snake translate to snake case
-func snake(s string) string {
-	snake := firstCap.ReplaceAllString(s, "${1}_${2}")
-	snake = allCap.ReplaceAllString(snake, "${1}_${2}")
-	return strings.ToLower(snake)
-}
-
-type Field struct {
-	Index  int
-	Type   reflect.Type
-	Name   string
-	Inline bool
-}
-
-func analyzeFields(tagKey string, t reflect.Type) []*Field {
-	fields := []*Field{}
-	for i := 0; i < t.NumField(); i++ {
-		tags := strings.Split(t.Field(i).Tag.Get(tagKey), ",")
-		if tags[0] == "-" {
-			continue
-		}
-		if tags[0] == "" {
-			tags[0] = snake(t.Field(i).Name)
-		}
-		field := &Field{Index: i, Type: t.Field(i).Type, Name: tags[0]}
-		for i := 1; i < len(tags); i++ {
-			if tags[i] == "inline" {
-				field.Inline = true
-			}
-		}
-		fields = append(fields, field)
-	}
-	orders := make([]*Field, 0, len(fields))
-	for _, field := range fields {
-		if !field.Inline {
-			orders = append(orders, field)
-		}
-	}
-	for _, field := range fields {
-		if field.Inline && field.Type.Kind() != reflect.Map {
-			orders = append(orders, field)
-		}
-	}
-	for _, field := range fields {
-		if field.Inline && field.Type.Kind() == reflect.Map {
-			orders = append(orders, field)
-		}
-	}
-	return orders
-}
 
 // convertSource convert map key to string
 func convertSource(src reflect.Value) reflect.Value {
@@ -76,11 +21,8 @@ func convertSource(src reflect.Value) reflect.Value {
 }
 
 func injectStructInternal(ctx context.Context, dst, src reflect.Value) error {
-	tagKey := ctxGetTagKey(ctx)
-	fields := analyzeFields(tagKey, dst.Type())
-	for _, field := range fields {
+	for _, field := range types.NewProfile(dst.Type(), ctxGetTagKey(ctx)).GetFields() {
 		vfield := dst.Field(field.Index)
-		tfield := field.Type
 		if !vfield.CanSet() {
 			continue
 		}
@@ -115,7 +57,7 @@ func injectStructInternal(ctx context.Context, dst, src reflect.Value) error {
 				return errs.New(err).Prefix("." + field.Name)
 			}
 		} else {
-			return errs.Newf("illegal inline type(%v) expect struct or map[string]", tfield).Prefix("." + field.Name)
+			return errs.Newf("illegal inline type(%v) expect struct or map[string]", field.Type).Prefix("." + field.Name)
 		}
 		continue
 	}
