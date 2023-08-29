@@ -1,0 +1,9 @@
+{
+    "obj": "object_a",
+    "ifaces": [{
+        "obj": "object_e",
+        "dfg": "xyz",
+        "cx": null,
+        "ff": { "vc": [1,23] }
+    }]
+}

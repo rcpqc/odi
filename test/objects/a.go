@@ -9,6 +9,7 @@ type A struct {
 	Arg0    int64
 	Arg1    string
 	Arg2    []uint
+	Arg3    float32      `yaml:"arg3"`
 	ObjectD D            `yaml:",inline"`
-	Ifaces  []Interface1 `yaml:"ifaces"`
+	Ifaces  []Interface1 `yaml:"ifaces" json:"ifaces"`
 }

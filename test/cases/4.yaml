@@ -1,0 +1,4 @@
+object: object_a
+ifaces:
+  - object: object_f
+    xx: 123

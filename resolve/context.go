@@ -32,13 +32,3 @@ func ctxGetTagKey(ctx context.Context) string {
 	}
 	return val
 }
-
-type ctxIgnore struct{}
-
-func ctxWithIgnore(ctx context.Context, ignore map[string]struct{}) context.Context {
-	return context.WithValue(ctx, ctxIgnore{}, ignore)
-}
-func ctxGetIgnore(ctx context.Context) map[string]struct{} {
-	val, _ := ctx.Value(ctxIgnore{}).(map[string]struct{})
-	return val
-}

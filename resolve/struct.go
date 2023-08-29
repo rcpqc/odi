@@ -108,7 +108,10 @@ func injectStructInternal(ctx context.Context, dst, src reflect.Value) error {
 				return errs.New(err).Prefix("." + field.Name)
 			}
 		} else if field.Type.Kind() == reflect.Pointer && field.Type.Elem().Kind() == reflect.Struct {
-			if err := injectStructInternal(ctx, vfield, src); err != nil {
+			if vfield.IsNil() {
+				vfield.Set(reflect.New(vfield.Type().Elem()))
+			}
+			if err := injectStructInternal(ctx, vfield.Elem(), src); err != nil {
 				return errs.New(err).Prefix("." + field.Name)
 			}
 		} else {
@@ -123,6 +126,5 @@ func injectStruct(ctx context.Context, dst, src reflect.Value) error {
 	if src.Kind() != reflect.Map {
 		return errs.Newf("expect map but %v", src.Kind())
 	}
-	injectStructInternal(ctx, dst, convertSource(src))
-	return nil
+	return injectStructInternal(ctx, dst, convertSource(src))
 }
