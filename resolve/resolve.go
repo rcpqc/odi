@@ -7,12 +7,16 @@ import (
 
 type Option func(ctx context.Context) context.Context
 
-func WithObjKey(key string) Option {
+func WithObjectKey(key string) Option {
 	return func(ctx context.Context) context.Context { return ctxWithObjectKey(ctx, key) }
 }
 
 func WithTagKey(key string) Option {
 	return func(ctx context.Context) context.Context { return ctxWithTagKey(ctx, key) }
+}
+
+func WithStructFieldNameCompatibility(enable bool) Option {
+	return func(ctx context.Context) context.Context { return ctxWithStructFieldNameCompatibility(ctx, enable) }
 }
 
 func Invoke(src any, opts ...Option) (any, error) {

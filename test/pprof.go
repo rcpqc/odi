@@ -30,7 +30,7 @@ func main() {
 	obj, err := odi.Resolve(source, opts...)
 	log.Print(obj)
 	log.Print(err)
-	n := 100000
+	n := 200000
 	st := time.Now()
 	for i := 0; i < n; i++ {
 		_, _ = odi.Resolve(source, opts...)

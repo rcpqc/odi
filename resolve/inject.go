@@ -100,7 +100,9 @@ func injectMap(ctx context.Context, dst, src reflect.Value) error {
 	if src.Kind() != reflect.Map {
 		return errs.Newf("expect map but %v", src.Kind())
 	}
-	dst.Set(reflect.MakeMap(dst.Type()))
+	if dst.IsNil() {
+		dst.Set(reflect.MakeMap(dst.Type()))
+	}
 	iter := src.MapRange()
 	for iter.Next() {
 		srcKey, srcVal := iter.Key(), iter.Value()

@@ -29,7 +29,7 @@ func ErrorEqual(err1 error, err2 error) bool {
 	return err1.Error() == err2.Error()
 }
 
-func TestODI(t *testing.T) {
+func TestResolveAndDispose(t *testing.T) {
 	tests := []struct {
 		name       string
 		source     any
@@ -48,7 +48,7 @@ func TestODI(t *testing.T) {
 				Arg0:    123,
 				Arg1:    "fafdsa",
 				Arg2:    []uint{1, 2, 3},
-				ObjectD: objects.D{KK: "kk123", B: &objects.B{}},
+				ObjectD: objects.D{KK: "kk123"},
 				Ifaces: []objects.Interface1{
 					&objects.B{XX: 123, YY: "aaf", ZZ: []uint{4, 5, 6}, WW: [2]float32{1.1, 4.3}},
 					&objects.C{C: "abcde", E: map[string]int{"a": 3}, F: map[bool]string{true: "T"}},
@@ -89,7 +89,7 @@ func TestODI(t *testing.T) {
 			tagKey: "yaml",
 			want: &objects.D{
 				KK: "432",
-				B: &objects.B{
+				B: objects.B{
 					XX: 123,
 					ZZ: []uint{2, 4},
 				},
@@ -114,7 +114,7 @@ func TestODI(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			opts := []resolve.Option{}
 			if tt.objKey != "" {
-				opts = append(opts, resolve.WithObjKey(tt.objKey))
+				opts = append(opts, resolve.WithObjectKey(tt.objKey))
 			}
 			if tt.tagKey != "" {
 				opts = append(opts, resolve.WithTagKey(tt.tagKey))

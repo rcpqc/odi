@@ -32,3 +32,13 @@ func ctxGetTagKey(ctx context.Context) string {
 	}
 	return val
 }
+
+type ctxStructFieldNameCompatibility struct{}
+
+func ctxWithStructFieldNameCompatibility(ctx context.Context, enable bool) context.Context {
+	return context.WithValue(ctx, ctxStructFieldNameCompatibility{}, enable)
+}
+func ctxGetStructFieldNameCompatibility(ctx context.Context) bool {
+	val, _ := ctx.Value(ctxStructFieldNameCompatibility{}).(bool)
+	return val
+}
