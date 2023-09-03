@@ -7,7 +7,7 @@ import (
 type C struct {
 	C any
 	d any
-	E map[string]int
+	E map[string]int `odi:",inline"`
 	F map[bool]string
 }
 

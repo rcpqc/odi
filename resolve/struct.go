@@ -2,7 +2,6 @@ package resolve
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	"github.com/rcpqc/odi/convert"
@@ -21,7 +20,7 @@ func convertSource(src reflect.Value) reflect.Value {
 	return reflect.ValueOf(m)
 }
 
-func injectStructInlineMap(ctx context.Context, dst, src reflect.Value, excludes map[string]struct{}) error {
+func injectStructInlineMap(ctx context.Context, dst, src reflect.Value, excludes map[string]struct{}) {
 	if dst.IsNil() {
 		dst.Set(reflect.MakeMap(dst.Type()))
 	}
@@ -32,15 +31,10 @@ func injectStructInlineMap(ctx context.Context, dst, src reflect.Value, excludes
 		}
 		srcKey, srcVal := iter.Key(), iter.Value()
 		dstKey, dstVal := reflect.New(dst.Type().Key()).Elem(), reflect.New(dst.Type().Elem()).Elem()
-		if err := inject(ctx, dstKey, srcKey); err != nil {
-			return errs.New(err).Prefix(fmt.Sprintf("[%s]", dstKey.String()))
+		if inject(ctx, dstKey, srcKey) == nil && inject(ctx, dstVal, srcVal) == nil {
+			dst.SetMapIndex(dstKey, dstVal)
 		}
-		if err := inject(ctx, dstVal, srcVal); err != nil {
-			return errs.New(err).Prefix(fmt.Sprintf("[%s]", dstKey.String()))
-		}
-		dst.SetMapIndex(dstKey, dstVal)
 	}
-	return nil
 }
 
 func injectStruct(ctx context.Context, dst, src reflect.Value) error {
@@ -53,16 +47,14 @@ func injectStruct(ctx context.Context, dst, src reflect.Value) error {
 	tProfile := types.GetProfile(dst.Type(), ctxGetTagKey(ctx))
 	for _, field := range tProfile.Fields {
 		if field.Error != nil {
-			return errs.New(field.Error).Prefix("." + field.Name)
+			return errs.New(field.Error).Prefix(field.Router)
 		}
 		vfield := dst.FieldByIndex(field.Index)
 		if !vfield.CanSet() {
 			continue
 		}
 		if field.InlineMap {
-			if err := injectStructInlineMap(ctx, vfield, src, tProfile.Names); err != nil {
-				return errs.New(err).Prefix("." + field.Name)
-			}
+			injectStructInlineMap(ctx, vfield, src, tProfile.Names)
 			continue
 		}
 		key := reflect.ValueOf(field.Name)
@@ -71,7 +63,7 @@ func injectStruct(ctx context.Context, dst, src reflect.Value) error {
 			continue
 		}
 		if err := inject(ctx, vfield, val); err != nil {
-			return errs.New(err).Prefix("." + field.Name)
+			return errs.New(err).Prefix(field.Router)
 		}
 	}
 	return nil
