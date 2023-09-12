@@ -1,14 +1,14 @@
-object: object_a
+object: case1_a
 arg0: 123
 arg1: fafdsa
 arg2: [1,2,3]
 ifaces:
-  - object: object_b
+  - object: case1_b
     xx: 123
     yy: aaf
     zz: [4,5,6]
     ww: [1.1,4.3]
-  - object: object_c
+  - object: case1_c
     c: abcde
     e:
       a: 3

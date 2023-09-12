@@ -1,7 +1,7 @@
 {
-    "obj": "object_a",
+    "obj": "case2_a",
     "ifaces": [{
-        "obj": "object_e",
+        "obj": "case2_e",
         "dfg": "xyz",
         "cx": null,
         "ff": { "vc": [1,23] }

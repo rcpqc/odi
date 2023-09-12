@@ -1,8 +1,14 @@
-package objects
+package case6
 
 import (
 	"fmt"
+
+	"github.com/rcpqc/odi/odi"
 )
+
+func init() {
+	odi.Provide("case6_g", func() any { return &G{} })
+}
 
 type C struct {
 	C any
@@ -17,4 +23,10 @@ func (o *C) Foo() error {
 
 func (o *C) Dispose() error {
 	return fmt.Errorf("ObjectC Dispose")
+}
+
+type G struct {
+	MC    map[string]*C
+	True  int
+	False float32
 }

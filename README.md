@@ -1,2 +1,3 @@
 # odi
-Object Dependency Injection
+对象依赖注入(Object Dependency Injection)
+

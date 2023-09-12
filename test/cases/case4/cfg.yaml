@@ -1,0 +1,4 @@
+object: case4_a
+ifaces:
+  - object: case4_f
+    xx: 123
