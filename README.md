@@ -87,21 +87,23 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	// 业务代码
 	object.(*Zoo).FeedAll()
+	
 	// 释放对象
 	odi.Dispose(object)
 }
 ```
 
 ## 特性
-- 支持属性注入
+- 支持属性注入  
   包括int,bool,string,float,map,slice,struct...，类似json.Unmarshal的能力
-- 支持接口注入（interface）
+- 支持接口注入（interface）  
   可以将已注册到ioc容器的组件，实例化后注入到interface字段
-- 支持Resolve回调接口（类似构造函数）
+- 支持Resolve回调接口（类似构造函数）  
   实现了该接口的类型，在完成注入后ODI会回调该接口用以一些自定义的处理，比如初始化
-- 支持Dispose回调接口（类似析构函数）
+- 支持Dispose回调接口（类似析构函数）  
   实现了该接口的类型，在释放对象时会进行回调
 
 ## 例子
