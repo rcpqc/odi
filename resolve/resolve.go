@@ -2,7 +2,10 @@ package resolve
 
 import (
 	"context"
+	"fmt"
 	"reflect"
+
+	"github.com/rcpqc/odi/types"
 )
 
 type Option func(ctx context.Context) context.Context
@@ -27,10 +30,21 @@ func Invoke(src any, opts ...Option) (any, error) {
 	return invoke(ctx, reflect.ValueOf(src))
 }
 
-func Inject(dst, src any, opts ...Option) error {
+func Struct(dst, src any, opts ...Option) error {
+	rdst := reflect.ValueOf(dst)
+	if rdst.Kind() != reflect.Pointer || rdst.Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("expect *struct but %v", rdst.Kind())
+	}
+	if rdst.IsNil() {
+		return fmt.Errorf("*struct is nil")
+	}
 	ctx := context.Background()
 	for _, opt := range opts {
 		ctx = opt(ctx)
 	}
-	return injectIgnoreResolve(ctx, reflect.ValueOf(dst), reflect.ValueOf(src))
+	rsrc := reflect.ValueOf(src)
+	if rsrc.IsValid() && rsrc.Type() == types.Any {
+		rsrc = rsrc.Elem()
+	}
+	return injectStruct(ctx, rdst.Elem(), rsrc)
 }

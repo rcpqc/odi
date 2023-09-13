@@ -11,6 +11,7 @@ import (
 var cvrsString [types.MaxKinds]func(src reflect.Value) (string, error)
 
 func init() {
+	cvrsString[reflect.Invalid] = cvrStringFromInvalid
 	cvrsString[reflect.Pointer] = cvrStringFromPointer
 	cvrsString[reflect.Bool] = cvrStringFromBool
 	cvrsString[reflect.Int] = cvrStringFromInt
@@ -27,6 +28,10 @@ func init() {
 	cvrsString[reflect.Float32] = cvrStringFromFloat
 	cvrsString[reflect.Float64] = cvrStringFromFloat
 	cvrsString[reflect.String] = cvrStringFromString
+}
+
+func cvrStringFromInvalid(src reflect.Value) (string, error) {
+	return "", nil
 }
 
 func cvrStringFromPointer(src reflect.Value) (string, error) {

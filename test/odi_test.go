@@ -11,12 +11,14 @@ import (
 	"github.com/rcpqc/odi/test/cases/case10"
 	"github.com/rcpqc/odi/test/cases/case11"
 	"github.com/rcpqc/odi/test/cases/case12"
+	"github.com/rcpqc/odi/test/cases/case14"
 	"github.com/rcpqc/odi/test/cases/case2"
 	"github.com/rcpqc/odi/test/cases/case5"
 	"github.com/rcpqc/odi/test/cases/case6"
 	"github.com/rcpqc/odi/test/cases/case8"
 	"github.com/rcpqc/odi/test/cases/case9"
 	"github.com/rcpqc/odi/test/config"
+	"gopkg.in/yaml.v3"
 
 	_ "github.com/rcpqc/odi/test/cases/case13"
 	_ "github.com/rcpqc/odi/test/cases/case3"
@@ -71,7 +73,8 @@ func TestResolveAndDispose(t *testing.T) {
 						CX:  321,
 						FF: &struct {
 							VC []int "json:\"vc\""
-						}{VC: []int{1, 23}}},
+						}{VC: []int{1, 23}},
+					},
 				},
 			},
 		},
@@ -220,7 +223,7 @@ func TestResolveAndDispose(t *testing.T) {
 		{
 			name:   "case13.1",
 			source: nil,
-			errR:   fmt.Errorf("_: classify err: data is nil"),
+			errR:   fmt.Errorf("_: classify err: expect map but invalid"),
 		},
 		{
 			name:   "case13.2",
@@ -259,13 +262,23 @@ func TestResolveAndDispose(t *testing.T) {
 		},
 		{
 			name:   "case13.9",
-			source: map[any]any{"object": "case13_c", "x": [2]any{"1231", func() {}}},
-			errR:   fmt.Errorf("_.x[1]: can't convert kind(func) to string"),
+			source: map[any]any{"object": "case13_c", "x": []any{"1231", 423, func() {}}},
+			errR:   fmt.Errorf("_.x[2]: can't convert kind(func) to string"),
 		},
 		{
 			name:   "case13.10",
 			source: map[any]any{"object": "case13_c", "z": map[any]any{complex(1, 2): 4}},
 			errR:   fmt.Errorf("_.z[]: can't convert kind(complex128) to string"),
+		},
+		{
+			name:   "case13.11",
+			source: map[any]any{"object": "case13_c", "x": []any{"1231", 423}},
+			errR:   fmt.Errorf("_.x: expect array's length to be 3 but 2"),
+		},
+		{
+			name:   "case14",
+			source: map[any]any{"object": "case14_a", "m1": nil, "s2": nil, "b2": nil},
+			want:   &case14.A{M1: map[string]string{}, S2: []int{}, B2: &case14.B{}},
 		},
 	}
 	for _, tt := range tests {
@@ -274,6 +287,8 @@ func TestResolveAndDispose(t *testing.T) {
 			obj, err := odi.Resolve(tt.source, tt.opts...)
 			if !reflect.DeepEqual(obj, tt.want) || !ErrorEqual(err, tt.errR) {
 				t.Errorf("Resolve().obj \nresult: %v\nexpect: %v", obj, tt.want)
+				bytesobj, _ := yaml.Marshal(obj)
+				t.Errorf(string(bytesobj))
 				t.Errorf("Resolve().err \nresult: %v\nexpect: %v", err, tt.errR)
 				return
 			}

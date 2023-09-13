@@ -41,27 +41,9 @@ func init() {
 	injectors[reflect.Struct] = injectStruct
 }
 
-func injectIgnoreResolve(ctx context.Context, dst, src reflect.Value) error {
-	if src.IsValid() && src.Type() == types.Any {
-		src = src.Elem()
-	}
-	if !src.IsValid() {
-		return nil
-	}
-	dst = reflect.Indirect(dst)
-	injector := injectors[dst.Kind()]
-	if injector == nil {
-		return errs.Newf("not support kind: %v", dst.Kind())
-	}
-	return injector(ctx, dst, src)
-}
-
 func inject(ctx context.Context, dst, src reflect.Value) error {
 	if src.IsValid() && src.Type() == types.Any {
 		src = src.Elem()
-	}
-	if !src.IsValid() {
-		return nil
 	}
 	if dst.CanAddr() && reflect.PointerTo(dst.Type()).Implements(IResolveType) {
 		return dst.Addr().Interface().(IResolve).Resolve(src.Interface())
@@ -81,10 +63,15 @@ func injectPointer(ctx context.Context, dst, src reflect.Value) error {
 }
 
 func injectArray(ctx context.Context, dst, src reflect.Value) error {
+	if src.Kind() == reflect.Invalid {
+		return nil
+	}
 	if src.Kind() != reflect.Array && src.Kind() != reflect.Slice {
 		return errs.Newf("expect slice or array but %v", src.Kind())
 	}
-	dst.Set(reflect.New(dst.Type()).Elem())
+	if src.Len() != dst.Len() {
+		return errs.Newf("expect array's length to be %d but %d", dst.Len(), src.Len())
+	}
 	for i := 0; i < src.Len() && i < dst.Len(); i++ {
 		elem := reflect.New(dst.Type().Elem()).Elem()
 		if err := inject(ctx, elem, src.Index(i)); err != nil {
@@ -96,6 +83,10 @@ func injectArray(ctx context.Context, dst, src reflect.Value) error {
 }
 
 func injectSlice(ctx context.Context, dst, src reflect.Value) error {
+	if src.Kind() == reflect.Invalid {
+		dst.Set(reflect.MakeSlice(dst.Type(), 0, 0))
+		return nil
+	}
 	if src.Kind() != reflect.Array && src.Kind() != reflect.Slice {
 		return errs.Newf("expect slice or array but %v", src.Kind())
 	}
@@ -111,6 +102,12 @@ func injectSlice(ctx context.Context, dst, src reflect.Value) error {
 }
 
 func injectMap(ctx context.Context, dst, src reflect.Value) error {
+	if src.Kind() == reflect.Invalid {
+		if dst.IsNil() {
+			dst.Set(reflect.MakeMap(dst.Type()))
+		}
+		return nil
+	}
 	if src.Kind() != reflect.Map {
 		return errs.Newf("expect map but %v", src.Kind())
 	}
@@ -133,7 +130,7 @@ func injectMap(ctx context.Context, dst, src reflect.Value) error {
 }
 
 func injectInterface(ctx context.Context, dst, src reflect.Value) error {
-	if dst.Type() == types.Any && dst.CanSet() {
+	if dst.Type() == types.Any {
 		dst.Set(src)
 		return nil
 	}

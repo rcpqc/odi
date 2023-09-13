@@ -26,10 +26,7 @@ func invoke(ctx context.Context, src reflect.Value) (any, error) {
 }
 
 func classify(ctx context.Context, src reflect.Value) (string, error) {
-	if !src.IsValid() {
-		return "", fmt.Errorf("data is nil")
-	}
-	if src.Type() == types.Any {
+	if src.IsValid() && src.Type() == types.Any {
 		src = src.Elem()
 	}
 	if src.Kind() != reflect.Map {

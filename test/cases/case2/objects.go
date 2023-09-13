@@ -27,10 +27,10 @@ type E struct {
 }
 
 func (o *E) Resolve(src any) error {
-	resolve.Inject(o, nil, resolve.WithObjectKey("obj"), resolve.WithTagKey("json"))
+	resolve.Struct(o, nil, resolve.WithObjectKey("obj"), resolve.WithTagKey("json"))
 	data := []any{map[any]any{"cx": 321}}
-	resolve.Inject(o, data[0], resolve.WithObjectKey("obj"), resolve.WithTagKey("json"))
-	if err := resolve.Inject(o, src, resolve.WithObjectKey("obj"), resolve.WithTagKey("json")); err != nil {
+	resolve.Struct(o, data[0], resolve.WithObjectKey("obj"), resolve.WithTagKey("json"))
+	if err := resolve.Struct(o, src, resolve.WithObjectKey("obj"), resolve.WithTagKey("json")); err != nil {
 		return err
 	}
 	o.DFG = "[" + o.DFG + "]"

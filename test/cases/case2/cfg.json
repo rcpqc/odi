@@ -3,7 +3,6 @@
     "ifaces": [{
         "obj": "case2_e",
         "dfg": "xyz",
-        "cx": null,
         "ff": { "vc": [1,23] }
     }]
 }

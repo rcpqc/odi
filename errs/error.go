@@ -6,9 +6,6 @@ import (
 
 // New new an error
 func New(err error) *Error {
-	if err == nil {
-		return nil
-	}
 	if e, ok := err.(*Error); ok {
 		return e
 	}
