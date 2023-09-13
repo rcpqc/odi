@@ -1,6 +1,8 @@
 package resolve
 
-import "context"
+import (
+	"context"
+)
 
 var (
 	ctxDefaultObjectKey = "object"

@@ -41,6 +41,21 @@ func init() {
 	injectors[reflect.Struct] = injectStruct
 }
 
+func injectIgnoreResolve(ctx context.Context, dst, src reflect.Value) error {
+	if src.IsValid() && src.Type() == types.Any {
+		src = src.Elem()
+	}
+	if !src.IsValid() {
+		return nil
+	}
+	dst = reflect.Indirect(dst)
+	injector := injectors[dst.Kind()]
+	if injector == nil {
+		return errs.Newf("not support kind: %v", dst.Kind())
+	}
+	return injector(ctx, dst, src)
+}
+
 func inject(ctx context.Context, dst, src reflect.Value) error {
 	if src.IsValid() && src.Type() == types.Any {
 		src = src.Elem()
@@ -48,15 +63,14 @@ func inject(ctx context.Context, dst, src reflect.Value) error {
 	if !src.IsValid() {
 		return nil
 	}
+	if dst.CanAddr() && reflect.PointerTo(dst.Type()).Implements(IResolveType) {
+		return dst.Addr().Interface().(IResolve).Resolve(src.Interface())
+	}
 	injector := injectors[dst.Kind()]
 	if injector == nil {
 		return errs.Newf("not support kind: %v", dst.Kind())
 	}
-	err := injector(ctx, dst, src)
-	if dst.CanAddr() && reflect.PointerTo(dst.Type()).Implements(IResolveType) {
-		err = dst.Addr().Interface().(IResolve).Resolve(src.Interface())
-	}
-	return err
+	return injector(ctx, dst, src)
 }
 
 func injectPointer(ctx context.Context, dst, src reflect.Value) error {

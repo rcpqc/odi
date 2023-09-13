@@ -32,5 +32,5 @@ func Inject(dst, src any, opts ...Option) error {
 	for _, opt := range opts {
 		ctx = opt(ctx)
 	}
-	return inject(ctx, reflect.ValueOf(dst), reflect.ValueOf(src))
+	return injectIgnoreResolve(ctx, reflect.ValueOf(dst), reflect.ValueOf(src))
 }

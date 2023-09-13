@@ -2,6 +2,7 @@ package case2
 
 import (
 	"github.com/rcpqc/odi/odi"
+	"github.com/rcpqc/odi/resolve"
 )
 
 func init() {
@@ -26,6 +27,9 @@ type E struct {
 }
 
 func (o *E) Resolve(src any) error {
+	if err := resolve.Inject(o, src, resolve.WithObjectKey("obj"), resolve.WithTagKey("json")); err != nil {
+		return err
+	}
 	o.DFG = "[" + o.DFG + "]"
 	return nil
 }
