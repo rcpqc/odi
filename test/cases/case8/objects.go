@@ -5,13 +5,9 @@ import (
 )
 
 func init() {
-	odi.Provide("case8_j", func() any { return &J{} })
+	odi.Provide("case8_bools", func() any { return &Bools{} })
 }
 
-type J struct {
-	ArrBool   []bool
-	ArrInt    []int
-	ArrUint   []uint
-	ArrFloat  []float64
-	ArrString []string
+type Bools struct {
+	ArrBool []bool
 }

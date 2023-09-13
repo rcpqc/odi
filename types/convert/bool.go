@@ -11,8 +11,6 @@ import (
 var cvrsBool [types.MaxKinds]func(src reflect.Value) (bool, error)
 
 func init() {
-	cvrsBool[reflect.Invalid] = cvrBoolFromInvalid
-	cvrsBool[reflect.Interface] = cvrBoolFromInterface
 	cvrsBool[reflect.Pointer] = cvrBoolFromPointer
 	cvrsBool[reflect.Bool] = cvrBoolFromBool
 	cvrsBool[reflect.Int] = cvrBoolFromInt
@@ -31,18 +29,9 @@ func init() {
 	cvrsBool[reflect.String] = cvrBoolFromString
 }
 
-func cvrBoolFromInvalid(src reflect.Value) (bool, error) {
-	return false, nil
-}
-func cvrBoolFromInterface(src reflect.Value) (bool, error) {
-	if src.Type() == types.Any {
-		return Bool(src.Elem())
-	}
-	return false, errs.Newf("can't convert interface to integer")
-}
 func cvrBoolFromPointer(src reflect.Value) (bool, error) {
 	if src.IsNil() {
-		return false, errs.Newf("can't nil pointer convert to integer")
+		return false, errs.Newf("can't convert nil pointer to bool")
 	}
 	return Bool(src.Elem())
 }
@@ -66,7 +55,7 @@ func cvrBoolFromFloat(src reflect.Value) (bool, error) {
 func cvrBoolFromString(src reflect.Value) (bool, error) {
 	b, err := strconv.ParseBool(src.String())
 	if err != nil {
-		return false, errs.Newf("string(%s) can't convert to boolean", src.String())
+		return false, errs.Newf("can't convert string(%s) to bool", src.String())
 	}
 	return b, nil
 }

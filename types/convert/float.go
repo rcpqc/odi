@@ -11,8 +11,6 @@ import (
 var cvrsFloat [types.MaxKinds]func(src reflect.Value) (float64, error)
 
 func init() {
-	cvrsFloat[reflect.Invalid] = cvrFloatFromInvalid
-	cvrsFloat[reflect.Interface] = cvrFloatFromInterface
 	cvrsFloat[reflect.Pointer] = cvrFloatFromPointer
 	cvrsFloat[reflect.Bool] = cvrFloatFromBool
 	cvrsFloat[reflect.Int] = cvrFloatFromInt
@@ -31,18 +29,9 @@ func init() {
 	cvrsFloat[reflect.String] = cvrFloatFromString
 }
 
-func cvrFloatFromInvalid(src reflect.Value) (float64, error) {
-	return 0, nil
-}
-func cvrFloatFromInterface(src reflect.Value) (float64, error) {
-	if src.Type() == types.Any {
-		return Float(src.Elem())
-	}
-	return 0, errs.Newf("can't convert interface to integer")
-}
 func cvrFloatFromPointer(src reflect.Value) (float64, error) {
 	if src.IsNil() {
-		return 0, errs.Newf("can't nil pointer convert to integer")
+		return 0, errs.Newf("can't convert nil pointer to float")
 	}
 	return Float(src.Elem())
 }
@@ -70,7 +59,7 @@ func cvrFloatFromFloat(src reflect.Value) (float64, error) {
 func cvrFloatFromString(src reflect.Value) (float64, error) {
 	f64, err := strconv.ParseFloat(src.String(), 64)
 	if err != nil {
-		return 0.0, errs.Newf("string(%s) can't convert to float", src.String())
+		return 0.0, errs.Newf("can't convert string(%s) to float", src.String())
 	}
 	return f64, nil
 }

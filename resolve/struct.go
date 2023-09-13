@@ -4,16 +4,20 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/rcpqc/odi/convert"
 	"github.com/rcpqc/odi/errs"
 	"github.com/rcpqc/odi/types"
+	"github.com/rcpqc/odi/types/convert"
 )
 
 // convertSource convert map key to string
 func convertSource(src reflect.Value) reflect.Value {
 	m := map[string]interface{}{}
 	for iter := src.MapRange(); iter.Next(); {
-		if s, err := convert.String(iter.Key()); err == nil {
+		key := iter.Key()
+		if key.Type() == types.Any {
+			key = key.Elem()
+		}
+		if s, err := convert.String(key); err == nil {
 			m[s] = iter.Value().Interface()
 		}
 	}

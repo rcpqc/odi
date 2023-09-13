@@ -8,14 +8,20 @@ import (
 	"github.com/rcpqc/odi/odi"
 	"github.com/rcpqc/odi/resolve"
 	"github.com/rcpqc/odi/test/cases/case1"
+	"github.com/rcpqc/odi/test/cases/case10"
+	"github.com/rcpqc/odi/test/cases/case11"
+	"github.com/rcpqc/odi/test/cases/case12"
 	"github.com/rcpqc/odi/test/cases/case2"
-	_ "github.com/rcpqc/odi/test/cases/case3"
-	_ "github.com/rcpqc/odi/test/cases/case4"
 	"github.com/rcpqc/odi/test/cases/case5"
 	"github.com/rcpqc/odi/test/cases/case6"
-	_ "github.com/rcpqc/odi/test/cases/case7"
 	"github.com/rcpqc/odi/test/cases/case8"
+	"github.com/rcpqc/odi/test/cases/case9"
 	"github.com/rcpqc/odi/test/config"
+
+	_ "github.com/rcpqc/odi/test/cases/case13"
+	_ "github.com/rcpqc/odi/test/cases/case3"
+	_ "github.com/rcpqc/odi/test/cases/case4"
+	_ "github.com/rcpqc/odi/test/cases/case7"
 )
 
 func ErrorEqual(err1 error, err2 error) bool {
@@ -60,9 +66,12 @@ func TestResolveAndDispose(t *testing.T) {
 			opts:   []resolve.Option{resolve.WithObjectKey("obj"), resolve.WithTagKey("json")},
 			want: &case2.A{
 				Ifaces: []case2.Interface{
-					&case2.E{DFG: "[xyz]", FF: &struct {
-						VC []int "json:\"vc\""
-					}{VC: []int{1, 23}}},
+					&case2.E{
+						DFG: "[xyz]",
+						CX:  321,
+						FF: &struct {
+							VC []int "json:\"vc\""
+						}{VC: []int{1, 23}}},
 				},
 			},
 		},
@@ -120,13 +129,143 @@ func TestResolveAndDispose(t *testing.T) {
 		},
 		{
 			name:   "case8.1",
-			source: map[any]any{"object": "case8_j", "arr_bool": []any{nil, int(-3), uint(0), 3.53, "TRUE", new(float32)}},
-			want:   &case8.J{ArrBool: []bool{false, true, false, true, true, false}},
+			source: map[any]any{"object": "case8_bools", "arr_bool": []any{nil, int(-3), uint(0), 3.53, "TRUE", new(float32)}},
+			want:   &case8.Bools{ArrBool: []bool{false, true, false, true, true, false}},
 		},
 		{
 			name:   "case8.2",
-			source: map[any]any{"object": "case8_j", "arr_bool": []any{3, "sdf"}},
-			errR:   fmt.Errorf("_.arr_bool[1]: string(sdf) can't convert to boolean"),
+			source: map[any]any{"object": "case8_bools", "arr_bool": []any{3, "sdf"}},
+			errR:   fmt.Errorf("_.arr_bool[1]: can't convert string(sdf) to bool"),
+		},
+		{
+			name:   "case8.3",
+			source: map[any]any{"object": "case8_bools", "arr_bool": []any{(*int)(nil)}},
+			errR:   fmt.Errorf("_.arr_bool[0]: can't convert nil pointer to bool"),
+		},
+		{
+			name:   "case8.4",
+			source: map[any]any{"object": "case8_bools", "arr_bool": []any{complex(1, 2)}},
+			errR:   fmt.Errorf("_.arr_bool[0]: can't convert kind(complex128) to bool"),
+		},
+		{
+			name:   "case9.1",
+			source: map[any]any{"object": "case9_ints", "arr_int": []any{nil, "-3", uint(0), 3.53, new(float32), true, false}},
+			want:   &case9.Ints{ArrInt: []int{0, -3, 0, 3, 0, 1, 0}},
+		},
+		{
+			name:   "case9.2",
+			source: map[any]any{"object": "case9_ints", "arr_int": []any{3, "sdf"}},
+			errR:   fmt.Errorf("_.arr_int[1]: can't convert string(sdf) to int"),
+		},
+		{
+			name:   "case9.3",
+			source: map[any]any{"object": "case9_ints", "arr_int": []any{(*int)(nil)}},
+			errR:   fmt.Errorf("_.arr_int[0]: can't convert nil pointer to int"),
+		},
+		{
+			name:   "case10.1",
+			source: map[any]any{"object": "case10_uints", "arr_uint": []any{nil, "54", uint(0), 3.53, new(float32), true, false}},
+			want:   &case10.Uints{ArrUint: []uint{0, 54, 0, 3, 0, 1, 0}},
+		},
+		{
+			name:   "case10.2",
+			source: map[any]any{"object": "case10_uints", "arr_uint": []any{3, "sdf"}},
+			errR:   fmt.Errorf("_.arr_uint[1]: can't convert string(sdf) to uint"),
+		},
+		{
+			name:   "case10.3",
+			source: map[any]any{"object": "case10_uints", "arr_uint": []any{(*int)(nil)}},
+			errR:   fmt.Errorf("_.arr_uint[0]: can't convert nil pointer to uint"),
+		},
+		{
+			name:   "case10.4",
+			source: map[any]any{"object": "case10_uints", "arr_uint": []any{complex(1, 2)}},
+			errR:   fmt.Errorf("_.arr_uint[0]: can't convert kind(complex128) to uint"),
+		},
+		{
+			name:   "case11.1",
+			source: map[any]any{"object": "case11_floats", "arr_float": []any{nil, "55.2", 2, uint(0), new(float32), true, false}},
+			want:   &case11.Floats{ArrFloat: []float64{0, 55.2, 2, 0, 0, 1, 0}},
+		},
+		{
+			name:   "case11.2",
+			source: map[any]any{"object": "case11_floats", "arr_float": []any{3, "sdf"}},
+			errR:   fmt.Errorf("_.arr_float[1]: can't convert string(sdf) to float"),
+		},
+		{
+			name:   "case11.3",
+			source: map[any]any{"object": "case11_floats", "arr_float": []any{(*int)(nil)}},
+			errR:   fmt.Errorf("_.arr_float[0]: can't convert nil pointer to float"),
+		},
+		{
+			name:   "case11.4",
+			source: map[any]any{"object": "case11_floats", "arr_float": []any{complex(1, 2)}},
+			errR:   fmt.Errorf("_.arr_float[0]: can't convert kind(complex128) to float"),
+		},
+		{
+			name:   "case12.1",
+			source: map[any]any{"object": "case12_strings", "arr_string": []any{nil, -2, uint(0), 23.443, new(float32), true, false}},
+			want:   &case12.Strings{ArrString: []string{"", "-2", "0", "23.443", "0", "true", "false"}},
+		},
+		{
+			name:   "case12.2",
+			source: map[any]any{"object": "case12_strings", "arr_string": []any{(*int)(nil)}},
+			errR:   fmt.Errorf("_.arr_string[0]: can't convert nil pointer to string"),
+		},
+		{
+			name:   "case12.3",
+			source: map[any]any{"object": "case12_strings", "arr_string": []any{complex(1, 2)}},
+			errR:   fmt.Errorf("_.arr_string[0]: can't convert kind(complex128) to string"),
+		},
+		{
+			name:   "case13.1",
+			source: nil,
+			errR:   fmt.Errorf("_: classify err: data is nil"),
+		},
+		{
+			name:   "case13.2",
+			source: []any{map[any]any{"object": "case13_a"}},
+			errR:   fmt.Errorf("_: classify err: expect map but slice"),
+		},
+		{
+			name:   "case13.3",
+			source: map[any]any{"xxx": "case13_a"},
+			errR:   fmt.Errorf("_: classify err: not exist kind field(object)"),
+		},
+		{
+			name:   "case13.4",
+			source: map[any]any{"object": "case13_b", "channel": make(chan int)},
+			errR:   fmt.Errorf("_.channel: not support kind: chan"),
+		},
+		{
+			name:   "case13.5",
+			source: map[any]any{"object": "case13_c", "x": "sdfsdf"},
+			errR:   fmt.Errorf("_.x: expect slice or array but string"),
+		},
+		{
+			name:   "case13.6",
+			source: map[any]any{"object": "case13_c", "y": "sdfsdf"},
+			errR:   fmt.Errorf("_.y: expect slice or array but string"),
+		},
+		{
+			name:   "case13.7",
+			source: map[any]any{"object": "case13_c", "z": "sdfsdf"},
+			errR:   fmt.Errorf("_.z: expect map but string"),
+		},
+		{
+			name:   "case13.8",
+			source: map[any]any{"object": "case13_c", "i": map[any]any{"object": "case13_a"}},
+			errR:   fmt.Errorf("_.i: the injected object does not implement the interface(case13.Iter)"),
+		},
+		{
+			name:   "case13.9",
+			source: map[any]any{"object": "case13_c", "x": [2]any{"1231", func() {}}},
+			errR:   fmt.Errorf("_.x[1]: can't convert kind(func) to string"),
+		},
+		{
+			name:   "case13.10",
+			source: map[any]any{"object": "case13_c", "z": map[any]any{complex(1, 2): 4}},
+			errR:   fmt.Errorf("_.z[]: can't convert kind(complex128) to string"),
 		},
 	}
 	for _, tt := range tests {

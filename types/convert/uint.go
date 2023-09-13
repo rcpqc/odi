@@ -11,8 +11,6 @@ import (
 var cvrsUint [types.MaxKinds]func(src reflect.Value) (uint64, error)
 
 func init() {
-	cvrsUint[reflect.Invalid] = cvrUintFromInvalid
-	cvrsUint[reflect.Interface] = cvrUintFromInterface
 	cvrsUint[reflect.Pointer] = cvrUintFromPointer
 	cvrsUint[reflect.Bool] = cvrUintFromBool
 	cvrsUint[reflect.Int] = cvrUintFromInt
@@ -31,18 +29,9 @@ func init() {
 	cvrsUint[reflect.String] = cvrUintFromString
 }
 
-func cvrUintFromInvalid(src reflect.Value) (uint64, error) {
-	return 0, nil
-}
-func cvrUintFromInterface(src reflect.Value) (uint64, error) {
-	if src.Type() == types.Any {
-		return Uint(src.Elem())
-	}
-	return 0, errs.Newf("can't convert interface to integer")
-}
 func cvrUintFromPointer(src reflect.Value) (uint64, error) {
 	if src.IsNil() {
-		return 0, errs.Newf("can't nil pointer convert to integer")
+		return 0, errs.Newf("can't convert nil pointer to uint")
 	}
 	return Uint(src.Elem())
 }
@@ -70,7 +59,7 @@ func cvrUintFromFloat(src reflect.Value) (uint64, error) {
 func cvrUintFromString(src reflect.Value) (uint64, error) {
 	u64, err := strconv.ParseUint(src.String(), 10, 64)
 	if err != nil {
-		return 0, errs.Newf("string(%s) can't convert to integer", src.String())
+		return 0, errs.Newf("can't convert string(%s) to uint", src.String())
 	}
 	return u64, nil
 }

@@ -11,8 +11,6 @@ import (
 var cvrsString [types.MaxKinds]func(src reflect.Value) (string, error)
 
 func init() {
-	cvrsString[reflect.Invalid] = cvrStringFromInvalid
-	cvrsString[reflect.Interface] = cvrStringFromInterface
 	cvrsString[reflect.Pointer] = cvrStringFromPointer
 	cvrsString[reflect.Bool] = cvrStringFromBool
 	cvrsString[reflect.Int] = cvrStringFromInt
@@ -31,18 +29,9 @@ func init() {
 	cvrsString[reflect.String] = cvrStringFromString
 }
 
-func cvrStringFromInvalid(src reflect.Value) (string, error) {
-	return "", nil
-}
-func cvrStringFromInterface(src reflect.Value) (string, error) {
-	if src.Type() == types.Any {
-		return String(src.Elem())
-	}
-	return "", errs.Newf("can't convert interface to string")
-}
 func cvrStringFromPointer(src reflect.Value) (string, error) {
 	if src.IsNil() {
-		return "", errs.Newf("can't nil pointer convert to string")
+		return "", errs.Newf("can't convert nil pointer to string")
 	}
 	return String(src.Elem())
 }
@@ -64,7 +53,7 @@ func cvrStringFromUint(src reflect.Value) (string, error) {
 }
 
 func cvrStringFromFloat(src reflect.Value) (string, error) {
-	return strconv.FormatFloat(src.Float(), 'f', 6, 64), nil
+	return strconv.FormatFloat(src.Float(), 'f', -1, 64), nil
 }
 
 func cvrStringFromString(src reflect.Value) (string, error) {

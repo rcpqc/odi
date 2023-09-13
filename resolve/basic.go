@@ -4,7 +4,7 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/rcpqc/odi/convert"
+	"github.com/rcpqc/odi/types/convert"
 )
 
 func injectBool(ctx context.Context, dst, src reflect.Value) error {
