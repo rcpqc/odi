@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/rcpqc/odi/odi"
+	"github.com/rcpqc/odi"
 )
 
 type Animal interface {

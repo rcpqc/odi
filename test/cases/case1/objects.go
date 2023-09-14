@@ -3,7 +3,7 @@ package case1
 import (
 	"fmt"
 
-	"github.com/rcpqc/odi/odi"
+	"github.com/rcpqc/odi"
 )
 
 func init() {

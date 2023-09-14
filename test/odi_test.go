@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/rcpqc/odi/odi"
+	"github.com/rcpqc/odi"
 	"github.com/rcpqc/odi/resolve"
 	"github.com/rcpqc/odi/test/cases/case1"
 	"github.com/rcpqc/odi/test/cases/case10"

@@ -1,7 +1,7 @@
 package case8
 
 import (
-	"github.com/rcpqc/odi/odi"
+	"github.com/rcpqc/odi"
 )
 
 func init() {

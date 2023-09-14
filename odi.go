@@ -21,6 +21,8 @@ func Dispose(object any, opts ...dispose.Option) error {
 	return dispose.Destory(object, opts...)
 }
 
+// IResolve custom callback interface when an object is resolved
 type IResolve = resolve.IResolve
 
+// IDispose custom callback interface when an object is disposed
 type IDispose = dispose.IDispose

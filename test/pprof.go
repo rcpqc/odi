@@ -6,7 +6,7 @@ import (
 	"runtime/pprof"
 	"time"
 
-	"github.com/rcpqc/odi/odi"
+	"github.com/rcpqc/odi"
 	"github.com/rcpqc/odi/resolve"
 	"github.com/rcpqc/odi/test/config"
 
