@@ -15,6 +15,7 @@ type A struct {
 	S2 []int
 	B1 *B
 	B2 *B
+	B3 B
 }
 
 type B struct {

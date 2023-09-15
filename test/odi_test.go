@@ -12,6 +12,8 @@ import (
 	"github.com/rcpqc/odi/test/cases/case11"
 	"github.com/rcpqc/odi/test/cases/case12"
 	"github.com/rcpqc/odi/test/cases/case14"
+	"github.com/rcpqc/odi/test/cases/case15"
+	"github.com/rcpqc/odi/test/cases/case16"
 	"github.com/rcpqc/odi/test/cases/case2"
 	"github.com/rcpqc/odi/test/cases/case5"
 	"github.com/rcpqc/odi/test/cases/case6"
@@ -90,7 +92,7 @@ func TestResolveAndDispose(t *testing.T) {
 			source: config.ReadYaml("cases/case4/cfg.yaml"),
 			opts:   []resolve.Option{resolve.WithTagKey("yaml")},
 			want:   nil,
-			errR:   fmt.Errorf("_.ifaces[0]: container create err: kind(case4_f) not registered"),
+			errR:   fmt.Errorf("_.ifaces[0]: container create -> kind(case4_f) not registered"),
 		},
 		{
 			name:   "case5",
@@ -109,7 +111,7 @@ func TestResolveAndDispose(t *testing.T) {
 			source: map[string]any{"step": []uint{1, 2}},
 			opts:   []resolve.Option{resolve.WithObjectKey("step")},
 			want:   nil,
-			errR:   fmt.Errorf("_: classify err: kind must be a string"),
+			errR:   fmt.Errorf("_: classify -> illegal object_kind([1 2])"),
 		},
 		{
 			name:   "case6.2",
@@ -223,22 +225,22 @@ func TestResolveAndDispose(t *testing.T) {
 		{
 			name:   "case13.1",
 			source: nil,
-			errR:   fmt.Errorf("_: classify err: expect map but invalid"),
+			want:   nil,
 		},
 		{
 			name:   "case13.2",
 			source: []any{map[any]any{"object": "case13_a"}},
-			errR:   fmt.Errorf("_: classify err: expect map but slice"),
+			errR:   fmt.Errorf("_: classify -> expect map but slice"),
 		},
 		{
 			name:   "case13.3",
 			source: map[any]any{"xxx": "case13_a"},
-			errR:   fmt.Errorf("_: classify err: not exist kind field(object)"),
+			errR:   fmt.Errorf("_: classify -> not found object_key(object)"),
 		},
 		{
 			name:   "case13.4",
 			source: map[any]any{"object": "case13_b", "channel": make(chan int)},
-			errR:   fmt.Errorf("_.channel: not support kind: chan"),
+			errR:   fmt.Errorf("_.channel: unsupported source kind(chan)"),
 		},
 		{
 			name:   "case13.5",
@@ -277,8 +279,74 @@ func TestResolveAndDispose(t *testing.T) {
 		},
 		{
 			name:   "case14",
-			source: map[any]any{"object": "case14_a", "m1": nil, "s2": nil, "b2": nil},
+			source: map[any]any{"object": "case14_a", "m1": nil, "s2": nil, "b2": nil, "b3": nil},
 			want:   &case14.A{M1: map[string]string{}, S2: []int{}, B2: &case14.B{}},
+		},
+		{
+			name:   "case15.1",
+			source: map[any]any{"object": "case15_expr1", "expr": nil},
+			want:   &case15.Expr1{},
+		},
+		{
+			name:   "case15.2",
+			source: map[any]any{"object": "case15_component", "x": nil},
+			want:   &case15.Component{},
+		},
+		{
+			name:   "case15.3",
+			source: map[any]any{"object": "case15_component", "y": nil},
+			errR:   fmt.Errorf("_.y: expect *struct but struct"),
+		},
+		{
+			name:   "case15.4",
+			source: map[any]any{"object": "case15_component", "z": nil},
+			errR:   fmt.Errorf("_.z: expect *struct but *int"),
+		},
+		{
+			name:   "case15.5",
+			source: map[any]any{"object": "case15_component", "x": []int{1, 2, 3}},
+			errR:   fmt.Errorf("_.x: illegal expr([1 2 3])"),
+		},
+		{
+			name:   "case15.6",
+			source: map[any]any{"object": "case15_component", "w": nil},
+			want:   &case15.Component{},
+		},
+		{
+			name: "case16.1",
+			source: map[any]any{
+				"object": "case16_map_objects",
+				"objects": map[string]any{
+					"obj1": map[any]any{"object": "case16_a", "s": "123"},
+					"obj2": map[string]any{"object": "case16_b", "i": 556},
+					"obj3": map[string]any{"object": "case16_c", "f": 33.4},
+				},
+			},
+			want: &case16.MapObjects{
+				Objects: map[string]case16.Object{
+					"obj1": &case16.A{S: "123"},
+					"obj2": &case16.B{I: 556},
+					"obj3": &case16.C{F: 33.4},
+				},
+			},
+		},
+		{
+			name: "case16.2",
+			source: map[any]any{
+				"object": "case16_slc_objects",
+				"objects": []any{
+					map[any]any{"object": "case16_a", "s": "123"},
+					map[string]any{"object": "case16_b", "i": 556},
+					map[string]any{"object": "case16_c", "f": 33.4},
+				},
+			},
+			want: &case16.SlcObjects{
+				Objects: []case16.Object{
+					&case16.A{S: "123"},
+					&case16.B{I: 556},
+					&case16.C{F: 33.4},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {

@@ -42,15 +42,15 @@ func init() {
 }
 
 func inject(ctx context.Context, dst, src reflect.Value) error {
-	if src.IsValid() && src.Type() == types.Any {
-		src = src.Elem()
-	}
 	if dst.CanAddr() && reflect.PointerTo(dst.Type()).Implements(IResolveType) {
 		return dst.Addr().Interface().(IResolve).Resolve(src.Interface())
 	}
 	injector := injectors[dst.Kind()]
 	if injector == nil {
-		return errs.Newf("not support kind: %v", dst.Kind())
+		return errs.Newf("unsupported source kind(%v)", dst.Kind())
+	}
+	if src.Type() == types.Any {
+		src = src.Elem()
 	}
 	return injector(ctx, dst, src)
 }
@@ -59,11 +59,14 @@ func injectPointer(ctx context.Context, dst, src reflect.Value) error {
 	if dst.IsNil() {
 		dst.Set(reflect.New(dst.Type().Elem()))
 	}
+	if !src.IsValid() {
+		return nil
+	}
 	return inject(ctx, dst.Elem(), src)
 }
 
 func injectArray(ctx context.Context, dst, src reflect.Value) error {
-	if src.Kind() == reflect.Invalid {
+	if !src.IsValid() {
 		return nil
 	}
 	if src.Kind() != reflect.Array && src.Kind() != reflect.Slice {
@@ -83,7 +86,7 @@ func injectArray(ctx context.Context, dst, src reflect.Value) error {
 }
 
 func injectSlice(ctx context.Context, dst, src reflect.Value) error {
-	if src.Kind() == reflect.Invalid {
+	if !src.IsValid() {
 		dst.Set(reflect.MakeSlice(dst.Type(), 0, 0))
 		return nil
 	}
@@ -102,17 +105,14 @@ func injectSlice(ctx context.Context, dst, src reflect.Value) error {
 }
 
 func injectMap(ctx context.Context, dst, src reflect.Value) error {
-	if src.Kind() == reflect.Invalid {
-		if dst.IsNil() {
-			dst.Set(reflect.MakeMap(dst.Type()))
-		}
+	if dst.IsNil() {
+		dst.Set(reflect.MakeMap(dst.Type()))
+	}
+	if !src.IsValid() {
 		return nil
 	}
 	if src.Kind() != reflect.Map {
 		return errs.Newf("expect map but %v", src.Kind())
-	}
-	if dst.IsNil() {
-		dst.Set(reflect.MakeMap(dst.Type()))
 	}
 	iter := src.MapRange()
 	for iter.Next() {
@@ -130,6 +130,9 @@ func injectMap(ctx context.Context, dst, src reflect.Value) error {
 }
 
 func injectInterface(ctx context.Context, dst, src reflect.Value) error {
+	if !src.IsValid() {
+		return nil
+	}
 	if dst.Type() == types.Any {
 		dst.Set(src)
 		return nil

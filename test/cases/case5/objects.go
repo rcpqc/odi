@@ -23,5 +23,6 @@ func (o *B) Foo() error {
 type D struct {
 	KK string `yaml:"kk"`
 	HH string `yaml:"-"`
-	B  B      `yaml:",inline"`
+	TT any
+	B  B `yaml:",inline"`
 }

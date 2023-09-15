@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-
-	"github.com/rcpqc/odi/types"
 )
 
 type Option func(ctx context.Context) context.Context
@@ -27,24 +25,40 @@ func Invoke(src any, opts ...Option) (any, error) {
 	for _, opt := range opts {
 		ctx = opt(ctx)
 	}
-	return invoke(ctx, reflect.ValueOf(src))
+	rsrc := reflect.ValueOf(src)
+	if !rsrc.IsValid() {
+		return nil, nil
+	}
+	return invoke(ctx, rsrc)
+}
+
+func Object(dst, src any, opts ...Option) error {
+	ctx := context.Background()
+	for _, opt := range opts {
+		ctx = opt(ctx)
+	}
+	rsrc := reflect.ValueOf(src)
+	if !rsrc.IsValid() {
+		return nil
+	}
+	return inject(ctx, reflect.ValueOf(dst), rsrc)
 }
 
 func Struct(dst, src any, opts ...Option) error {
 	rdst := reflect.ValueOf(dst)
-	if rdst.Kind() != reflect.Pointer || rdst.Elem().Kind() != reflect.Struct {
+	if rdst.Kind() != reflect.Pointer {
 		return fmt.Errorf("expect *struct but %v", rdst.Kind())
 	}
-	if rdst.IsNil() {
-		return fmt.Errorf("*struct is nil")
+	if rdst.Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("expect *struct but *%v", rdst.Elem().Kind())
 	}
 	ctx := context.Background()
 	for _, opt := range opts {
 		ctx = opt(ctx)
 	}
 	rsrc := reflect.ValueOf(src)
-	if rsrc.IsValid() && rsrc.Type() == types.Any {
-		rsrc = rsrc.Elem()
+	if !rsrc.IsValid() {
+		return nil
 	}
 	return injectStruct(ctx, rdst.Elem(), rsrc)
 }

@@ -42,7 +42,7 @@ func injectStructInlineMap(ctx context.Context, dst, src reflect.Value, excludes
 }
 
 func injectStruct(ctx context.Context, dst, src reflect.Value) error {
-	if src.Kind() == reflect.Invalid {
+	if !src.IsValid() {
 		return nil
 	}
 	if src.Kind() != reflect.Map {
