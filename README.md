@@ -107,4 +107,4 @@ func main() {
   实现了该接口的类型，在释放对象时会进行回调
 
 ## 例子
-可参考[单测](github.com/rcpqc/odi/test/)
+可参考[单测](/test/odi_test.go)
