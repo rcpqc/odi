@@ -1,0 +1,10 @@
+object: case17_a
+arr: 
+  - object: case17_c
+  - object: case17_e
+  - object: case17_b
+slc: 
+  - object: case17_f
+  - object: case17_d
+map: 
+  g: {object: case17_g, error: XXX3}

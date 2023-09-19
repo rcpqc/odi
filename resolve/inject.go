@@ -6,7 +6,6 @@ import (
 	"reflect"
 
 	"github.com/rcpqc/odi/errs"
-
 	"github.com/rcpqc/odi/types"
 )
 

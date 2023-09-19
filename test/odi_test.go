@@ -14,6 +14,7 @@ import (
 	"github.com/rcpqc/odi/test/cases/case14"
 	"github.com/rcpqc/odi/test/cases/case15"
 	"github.com/rcpqc/odi/test/cases/case16"
+	"github.com/rcpqc/odi/test/cases/case17"
 	"github.com/rcpqc/odi/test/cases/case2"
 	"github.com/rcpqc/odi/test/cases/case5"
 	"github.com/rcpqc/odi/test/cases/case6"
@@ -38,7 +39,7 @@ func ErrorEqual(err1 error, err2 error) bool {
 	return err1.Error() == err2.Error()
 }
 
-func TestResolveAndDispose(t *testing.T) {
+func TestResolve(t *testing.T) {
 	tests := []struct {
 		name   string
 		source any
@@ -354,15 +355,11 @@ func TestResolveAndDispose(t *testing.T) {
 			// Resolve
 			obj, err := odi.Resolve(tt.source, tt.opts...)
 			if !reflect.DeepEqual(obj, tt.want) || !ErrorEqual(err, tt.errR) {
-				t.Errorf("Resolve().obj \nresult: %v\nexpect: %v", obj, tt.want)
+				t.Errorf("Resolve() -> \nobject(%v)\nexpect(%v)", obj, tt.want)
 				bytesobj, _ := yaml.Marshal(obj)
 				t.Errorf(string(bytesobj))
-				t.Errorf("Resolve().err \nresult: %v\nexpect: %v", err, tt.errR)
+				t.Errorf("Resolve() -> \nerr(%v)\nexpect(%v)", err, tt.errR)
 				return
-			}
-			// Dispose
-			if err := odi.Dispose(obj); !ErrorEqual(err, tt.errD) {
-				t.Errorf("Dispose().err \nresult: %v\nexpect: %v", err, tt.errD)
 			}
 		})
 	}
@@ -374,5 +371,70 @@ func BenchmarkResolve(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, _ = odi.Resolve(source, opts...)
+	}
+}
+
+func TestIterate(t *testing.T) {
+	type Iter interface{ Iter() (string, error) }
+	tests := []struct {
+		name   string
+		source any
+		opts   []resolve.Option
+		want   []string
+		err    error
+	}{
+		{
+			name:   "case17.1",
+			source: config.ReadYaml("cases/case17/cfg1.yaml"),
+			want:   []string{"C", "E", "B", "F", "D", "B"},
+			err:    nil,
+		},
+		{
+			name:   "case17.2",
+			source: config.ReadYaml("cases/case17/cfg2.yaml"),
+			want:   []string{"C"},
+			err:    fmt.Errorf("XXX2"),
+		},
+		{
+			name:   "case17.3",
+			source: config.ReadYaml("cases/case17/cfg3.yaml"),
+			want:   []string{"C", "E", "B", "F", "D"},
+			err:    fmt.Errorf("XXX3"),
+		},
+		{
+			name: "case17.4",
+			source: map[string]any{
+				"object": "case17_a",
+				"map": map[any]any{
+					&case17.G{Error: "X4"}: map[string]any{"object": "case17_g", "error": "X44"},
+				},
+			},
+			want: []string{},
+			err:  fmt.Errorf("X4"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Resolve
+			obj, err := odi.Resolve(tt.source, tt.opts...)
+			if err != nil {
+				t.Fatal(err)
+			}
+			//
+			results := []string{}
+			err = odi.Iterate(obj, func(iface Iter) error {
+				r, err := iface.Iter()
+				if err != nil {
+					return err
+				}
+				results = append(results, r)
+				return nil
+			})
+			if !reflect.DeepEqual(results, tt.want) || !ErrorEqual(err, tt.err) {
+				t.Errorf("Iterate() -> \nresult: %v\nexpect: %v", results, tt.want)
+				t.Errorf("Iterate() -> \n   err: %v\nexpect: %v", err, tt.err)
+				return
+			}
+		})
 	}
 }
