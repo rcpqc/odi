@@ -9,8 +9,8 @@ import (
 	"github.com/rcpqc/odi/types/convert"
 )
 
-// convertSource convert map key to string
-func convertSource(src reflect.Value) reflect.Value {
+// sourceConvert convert map key to string
+func sourceConvert(src reflect.Value) reflect.Value {
 	m := map[string]interface{}{}
 	for iter := src.MapRange(); iter.Next(); {
 		key := iter.Key()
@@ -24,21 +24,19 @@ func convertSource(src reflect.Value) reflect.Value {
 	return reflect.ValueOf(m)
 }
 
-func injectStructInlineMap(ctx context.Context, dst, src reflect.Value, excludes map[string]struct{}) {
-	if dst.IsNil() {
-		dst.Set(reflect.MakeMap(dst.Type()))
-	}
-	iter := src.MapRange()
-	for iter.Next() {
-		if _, ok := excludes[iter.Key().String()]; ok {
-			continue
+// sourceExclude exclude some keys in source
+func sourceExclude(src reflect.Value, excludes map[string]struct{}) reflect.Value {
+	dst := reflect.MakeMap(src.Type())
+	for iter := src.MapRange(); iter.Next(); {
+		key, val := iter.Key(), iter.Value()
+		if s, ok := key.Interface().(string); ok {
+			if _, ok := excludes[s]; ok {
+				continue
+			}
 		}
-		srcKey, srcVal := iter.Key(), iter.Value()
-		dstKey, dstVal := reflect.New(dst.Type().Key()).Elem(), reflect.New(dst.Type().Elem()).Elem()
-		if inject(ctx, dstKey, srcKey) == nil && inject(ctx, dstVal, srcVal) == nil {
-			dst.SetMapIndex(dstKey, dstVal)
-		}
+		dst.SetMapIndex(key, val)
 	}
+	return dst
 }
 
 func injectStruct(ctx context.Context, dst, src reflect.Value) error {
@@ -49,7 +47,7 @@ func injectStruct(ctx context.Context, dst, src reflect.Value) error {
 		return errs.Newf("expect map but %v", src.Kind())
 	}
 	if ctxGetStructFieldNameCompatibility(ctx) {
-		src = convertSource(src)
+		src = sourceConvert(src)
 	}
 	tProfile := types.GetProfile(dst.Type(), ctxGetTagKey(ctx))
 	for _, field := range tProfile.Fields {
@@ -61,7 +59,15 @@ func injectStruct(ctx context.Context, dst, src reflect.Value) error {
 			continue
 		}
 		if field.InlineMap {
-			injectStructInlineMap(ctx, vfield, src, tProfile.Names)
+			if err := injectMap(ctx, vfield, sourceExclude(src, tProfile.Names)); err != nil {
+				return errs.New(err).Prefix(field.Router)
+			}
+			continue
+		}
+		if field.InlineIface {
+			if err := injectInterface(ctx, vfield, sourceExclude(src, tProfile.Names)); err != nil {
+				return errs.New(err).Prefix(field.Router)
+			}
 			continue
 		}
 		key := reflect.ValueOf(field.Name)

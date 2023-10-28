@@ -25,11 +25,12 @@ type Profile struct {
 
 // Field
 type Field struct {
-	Index     []int
-	Name      string
-	Router    string
-	InlineMap bool
-	Error     error
+	Index       []int
+	Name        string
+	Router      string
+	InlineMap   bool
+	InlineIface bool
+	Error       error
 }
 
 // GetProfile get or construct type's profile
@@ -62,6 +63,9 @@ func extractFields(index []int, router string, st reflect.StructField, tagKey st
 	if t.Kind() == reflect.Map && t.Key() == String {
 		return []*Field{{Index: index, Name: tags[0], Router: router, InlineMap: true}}
 	}
+	if t.Kind() == reflect.Interface {
+		return []*Field{{Index: index, Name: tags[0], Router: router, InlineIface: true}}
+	}
 	if t.Kind() == reflect.Struct {
 		fields := []*Field{}
 		for i := 0; i < t.NumField(); i++ {
@@ -69,7 +73,7 @@ func extractFields(index []int, router string, st reflect.StructField, tagKey st
 		}
 		return fields
 	}
-	err := fmt.Errorf("illegal inline type(%v) expect struct or map[string]any", st.Type)
+	err := fmt.Errorf("illegal inline type(%v) expect type(struct, map[string]any, interface)", st.Type)
 	return []*Field{{Index: index, Name: tags[0], Router: router, Error: err}}
 }
 

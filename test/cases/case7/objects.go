@@ -7,6 +7,8 @@ import (
 func init() {
 	odi.Provide("case7_b", func() any { return &B{} })
 	odi.Provide("case7_h", func() any { return &H{} })
+	odi.Provide("case7_e", func() any { return &E{} })
+	odi.Provide("case7_f", func() any { return &F{} })
 }
 
 type B struct {
@@ -28,4 +30,23 @@ type H struct {
 	H2 struct {
 		C int
 	}
+}
+
+type Iface interface {
+	Foo() error
+}
+
+type D struct {
+	AA string
+	YY string
+	NN Iface `odi:",inline"`
+}
+
+type E struct {
+	Ds []D
+}
+
+type F struct {
+	Kind string         `odi:"object"`
+	LL   map[string]int `odi:",inline"`
 }
