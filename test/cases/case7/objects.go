@@ -25,8 +25,8 @@ func (o *B) Foo() error {
 type H struct {
 	H1 struct {
 		A string
-		B *B `odi:",inline"`
-	} `odi:",inline"`
+		B *B `odi:"b,inline"`
+	} `odi:"h1,inline"`
 	H2 struct {
 		C int
 	}
@@ -48,5 +48,5 @@ type E struct {
 
 type F struct {
 	Kind string         `odi:"object"`
-	LL   map[string]int `odi:",inline"`
+	LL   map[string]int `odi:"ll,inline"`
 }

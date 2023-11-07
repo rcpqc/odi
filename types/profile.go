@@ -43,11 +43,12 @@ func GetProfile(t reflect.Type, tagKey string) *Profile {
 
 func extractFields(index []int, router string, st reflect.StructField, tagKey string) []*Field {
 	tags := strings.Split(st.Tag.Get(tagKey), ",")
-	if tags[0] == "-" {
+	name := tags[0]
+	if name == "-" {
 		return nil
 	}
-	if tags[0] == "" {
-		tags[0] = snake(st.Name)
+	if name == "" {
+		name = snake(st.Name)
 	}
 	inline := false
 	for i := 1; i < len(tags); i++ {
@@ -55,16 +56,18 @@ func extractFields(index []int, router string, st reflect.StructField, tagKey st
 			inline = true
 		}
 	}
-	router = router + "." + tags[0]
 	if !inline {
-		return []*Field{{Index: index, Name: tags[0], Router: router}}
+		return []*Field{{Index: index, Name: name, Router: router + "." + name}}
+	}
+	if tags[0] != "" {
+		router = router + "." + name
 	}
 	t := st.Type
 	if t.Kind() == reflect.Map && t.Key() == String {
-		return []*Field{{Index: index, Name: tags[0], Router: router, InlineMap: true}}
+		return []*Field{{Index: index, Name: name, Router: router, InlineMap: true}}
 	}
 	if t.Kind() == reflect.Interface {
-		return []*Field{{Index: index, Name: tags[0], Router: router, InlineIface: true}}
+		return []*Field{{Index: index, Name: name, Router: router, InlineIface: true}}
 	}
 	if t.Kind() == reflect.Struct {
 		fields := []*Field{}
@@ -74,7 +77,7 @@ func extractFields(index []int, router string, st reflect.StructField, tagKey st
 		return fields
 	}
 	err := fmt.Errorf("illegal inline type(%v) expect type(struct, map[string]any, interface)", st.Type)
-	return []*Field{{Index: index, Name: tags[0], Router: router, Error: err}}
+	return []*Field{{Index: index, Name: name, Router: router, Error: err}}
 }
 
 // NewProfile construct type's profile
@@ -85,7 +88,7 @@ func NewProfile(t reflect.Type, tagKey string) *Profile {
 	}
 	o.Names = map[string]struct{}{}
 	for _, f := range o.Fields {
-		if !f.InlineMap && f.Error == nil {
+		if !f.InlineMap && !f.InlineIface && f.Error == nil {
 			o.Names[f.Name] = struct{}{}
 		}
 	}
