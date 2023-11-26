@@ -1,8 +1,6 @@
 package case6
 
 import (
-	"fmt"
-
 	"github.com/rcpqc/odi"
 )
 
@@ -21,9 +19,7 @@ func (o *C) Foo() error {
 	return nil
 }
 
-func (o *C) Dispose() error {
-	return fmt.Errorf("ObjectC Dispose")
-}
+func (o *C) Dispose() {}
 
 type G struct {
 	MC    map[string]*C

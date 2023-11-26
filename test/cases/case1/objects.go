@@ -1,8 +1,6 @@
 package case1
 
 import (
-	"fmt"
-
 	"github.com/rcpqc/odi"
 )
 
@@ -49,9 +47,7 @@ func (o *C) Foo() error {
 	return nil
 }
 
-func (o *C) Dispose() error {
-	return fmt.Errorf("ObjectC Dispose")
-}
+func (o *C) Dispose() {}
 
 type D struct {
 	KK string `yaml:"kk"`
