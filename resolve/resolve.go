@@ -2,7 +2,6 @@ package resolve
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 )
 
@@ -42,23 +41,4 @@ func Object(dst, src any, opts ...Option) error {
 		return nil
 	}
 	return inject(ctx, reflect.ValueOf(dst), rsrc)
-}
-
-func Struct(dst, src any, opts ...Option) error {
-	rdst := reflect.ValueOf(dst)
-	if rdst.Kind() != reflect.Pointer {
-		return fmt.Errorf("expect *struct but %v", rdst.Kind())
-	}
-	if rdst.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("expect *struct but *%v", rdst.Elem().Kind())
-	}
-	ctx := context.Background()
-	for _, opt := range opts {
-		ctx = opt(ctx)
-	}
-	rsrc := reflect.ValueOf(src)
-	if !rsrc.IsValid() {
-		return nil
-	}
-	return injectStruct(ctx, rdst.Elem(), rsrc)
 }

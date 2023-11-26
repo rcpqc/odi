@@ -2,7 +2,6 @@ package case2
 
 import (
 	"github.com/rcpqc/odi"
-	"github.com/rcpqc/odi/resolve"
 )
 
 func init() {
@@ -26,13 +25,15 @@ type E struct {
 	} `json:"ff"`
 }
 
-func (o *E) Resolve(src any) error {
-	resolve.Struct(o, nil, resolve.WithObjectKey("obj"), resolve.WithTagKey("json"))
-	data := []any{map[any]any{"cx": 321}}
-	resolve.Struct(o, data[0], resolve.WithObjectKey("obj"), resolve.WithTagKey("json"))
-	if err := resolve.Struct(o, src, resolve.WithObjectKey("obj"), resolve.WithTagKey("json")); err != nil {
+func (o *E) Resolve(src any, def func() error) error {
+	o.CX = 321
+	if err := def(); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (o *E) Prepare() error {
 	o.DFG = "[" + o.DFG + "]"
 	return nil
 }

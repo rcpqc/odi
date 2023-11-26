@@ -313,21 +313,11 @@ func TestResolve(t *testing.T) {
 		},
 		{
 			name:   "case15.3",
-			source: map[any]any{"object": "case15_component", "y": nil},
-			err:    fmt.Errorf("_.y: expect *struct but struct"),
-		},
-		{
-			name:   "case15.4",
-			source: map[any]any{"object": "case15_component", "z": nil},
-			err:    fmt.Errorf("_.z: expect *struct but *int"),
-		},
-		{
-			name:   "case15.5",
 			source: map[any]any{"object": "case15_component", "x": []int{1, 2, 3}},
 			err:    fmt.Errorf("_.x: illegal expr([1 2 3])"),
 		},
 		{
-			name:   "case15.6",
+			name:   "case15.4",
 			source: map[any]any{"object": "case15_component", "w": nil},
 			want:   &case15.Component{},
 		},

@@ -10,13 +10,21 @@ import (
 )
 
 // IResolve custom resolve interface for an object
-type IResolve interface{ Resolve(src any) error }
+type IResolve interface {
+	Resolve(src any, def func() error) error
+}
 
 var IResolveType = reflect.TypeOf((*IResolve)(nil)).Elem()
+
+// IPrepare custom prepare interface for an object
+type IPrepare interface{ Prepare() error }
+
+var IPrepareType = reflect.TypeOf((*IPrepare)(nil)).Elem()
 
 var injectors [types.MaxKinds]func(ctx context.Context, dst, src reflect.Value) error
 
 func init() {
+	injectors[reflect.Invalid] = injectUnknown
 	injectors[reflect.Bool] = injectBool
 	injectors[reflect.Int] = injectInt
 	injectors[reflect.Int8] = injectInt
@@ -31,27 +39,52 @@ func init() {
 	injectors[reflect.Uintptr] = injectUint
 	injectors[reflect.Float32] = injectFloat
 	injectors[reflect.Float64] = injectFloat
+	injectors[reflect.Complex64] = injectUnknown
+	injectors[reflect.Complex128] = injectUnknown
 	injectors[reflect.Array] = injectArray
+	injectors[reflect.Chan] = injectUnknown
+	injectors[reflect.Func] = injectUnknown
 	injectors[reflect.Interface] = injectInterface
 	injectors[reflect.Map] = injectMap
 	injectors[reflect.Pointer] = injectPointer
 	injectors[reflect.Slice] = injectSlice
 	injectors[reflect.String] = injectString
 	injectors[reflect.Struct] = injectStruct
+	injectors[reflect.UnsafePointer] = injectUnknown
+}
+
+func injectCustom(ctx context.Context, dst, src reflect.Value) error {
+	return dst.Addr().Interface().(IResolve).Resolve(src.Interface(), func() error {
+		if src.Type() == types.Any {
+			src = src.Elem()
+		}
+		return injectors[dst.Kind()](ctx, dst, src)
+	})
 }
 
 func inject(ctx context.Context, dst, src reflect.Value) error {
-	if dst.CanAddr() && reflect.PointerTo(dst.Type()).Implements(IResolveType) {
-		return dst.Addr().Interface().(IResolve).Resolve(src.Interface())
+	var err error
+	canAddr := dst.CanAddr()
+	pdst := reflect.PointerTo(dst.Type())
+	if canAddr && pdst.Implements(IResolveType) {
+		err = injectCustom(ctx, dst, src)
+	} else {
+		if src.Type() == types.Any {
+			src = src.Elem()
+		}
+		err = injectors[dst.Kind()](ctx, dst, src)
 	}
-	injector := injectors[dst.Kind()]
-	if injector == nil {
-		return errs.Newf("unsupported source kind(%v)", dst.Kind())
+	if err != nil {
+		return err
 	}
-	if src.Type() == types.Any {
-		src = src.Elem()
+	if canAddr && pdst.Implements(IPrepareType) {
+		return dst.Addr().Interface().(IPrepare).Prepare()
 	}
-	return injector(ctx, dst, src)
+	return nil
+}
+
+func injectUnknown(ctx context.Context, dst, src reflect.Value) error {
+	return errs.Newf("unsupported source kind(%v)", dst.Kind())
 }
 
 func injectPointer(ctx context.Context, dst, src reflect.Value) error {

@@ -24,8 +24,8 @@ type Expr1 struct {
 	e ast.Expr
 }
 
-func (o *Expr1) Resolve(src any) error {
-	if err := resolve.Struct(o, src, resolve.WithObjectKey("object")); err != nil {
+func (o *Expr1) Resolve(src any, def func() error) error {
+	if err := def(); err != nil {
 		if err := resolve.Object(&o.Expr, src, resolve.WithObjectKey("object")); err != nil {
 			return fmt.Errorf("illegal expr(%v)", src)
 		}
@@ -45,17 +45,9 @@ type Expr2 struct {
 	Timeout string
 }
 
-func (o *Expr2) Resolve(src any) error {
-	return resolve.Struct(*o, src)
-}
-
 type Expr3 struct {
 	Expr    string
 	Timeout string
-}
-
-func (o *Expr3) Resolve(src any) error {
-	return resolve.Struct(new(int), src)
 }
 
 type Expr4 struct {
@@ -63,7 +55,7 @@ type Expr4 struct {
 	Timeout string
 }
 
-func (o *Expr4) Resolve(src any) error {
+func (o *Expr4) Resolve(src any, def func() error) error {
 	return resolve.Object(&o.Expr, src, resolve.WithObjectKey("object"))
 }
 
