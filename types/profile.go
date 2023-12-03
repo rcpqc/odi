@@ -20,13 +20,13 @@ func snake(s string) string {
 // Profile type's Profile
 type Profile struct {
 	Fields []*Field
-	Names  map[string]struct{}
+	Names  map[any]struct{}
 }
 
 // Field
 type Field struct {
 	Index       []int
-	Name        string
+	Name        any
 	Router      string
 	InlineMap   bool
 	InlineIface bool
@@ -86,7 +86,7 @@ func NewProfile(t reflect.Type, tagKey string) *Profile {
 	for i := 0; i < t.NumField(); i++ {
 		o.Fields = append(o.Fields, extractFields([]int{i}, "", t.Field(i), tagKey)...)
 	}
-	o.Names = map[string]struct{}{}
+	o.Names = map[any]struct{}{}
 	for _, f := range o.Fields {
 		if !f.InlineMap && !f.InlineIface && f.Error == nil {
 			o.Names[f.Name] = struct{}{}

@@ -25,14 +25,12 @@ func sourceConvert(src reflect.Value) reflect.Value {
 }
 
 // sourceExclude exclude some keys in source
-func sourceExclude(src reflect.Value, excludes map[string]struct{}) reflect.Value {
+func sourceExclude(src reflect.Value, excludes map[any]struct{}) reflect.Value {
 	dst := reflect.MakeMap(src.Type())
 	for iter := src.MapRange(); iter.Next(); {
 		key, val := iter.Key(), iter.Value()
-		if s, ok := key.Interface().(string); ok {
-			if _, ok := excludes[s]; ok {
-				continue
-			}
+		if _, ok := excludes[key.Interface()]; ok {
+			continue
 		}
 		dst.SetMapIndex(key, val)
 	}
