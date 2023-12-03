@@ -56,7 +56,7 @@ func init() {
 func injectCustom(ctx context.Context, dst, src reflect.Value) error {
 	return dst.Addr().Interface().(IResolve).Resolve(src.Interface(), func() error {
 		if src.Type() == types.Any {
-			src = src.Elem()
+			return injectors[dst.Kind()](ctx, dst, src.Elem())
 		}
 		return injectors[dst.Kind()](ctx, dst, src)
 	})

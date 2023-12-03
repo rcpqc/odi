@@ -5,8 +5,8 @@ import (
 )
 
 var (
-	ctxDefaultObjectKey = "object"
-	ctxDefaultTagKey    = "odi"
+	ctxDefaultObjectKey any = "object"
+	ctxDefaultTagKey        = "odi"
 )
 
 type ctxObject struct{}
@@ -14,9 +14,9 @@ type ctxObject struct{}
 func ctxWithObjectKey(ctx context.Context, key string) context.Context {
 	return context.WithValue(ctx, ctxObject{}, key)
 }
-func ctxGetObjectKey(ctx context.Context) string {
-	val, ok := ctx.Value(ctxObject{}).(string)
-	if !ok {
+func ctxGetObjectKey(ctx context.Context) any {
+	val := ctx.Value(ctxObject{})
+	if val == nil {
 		return ctxDefaultObjectKey
 	}
 	return val
