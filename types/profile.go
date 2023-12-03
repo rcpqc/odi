@@ -33,14 +33,6 @@ type Field struct {
 	Error       error
 }
 
-// GetProfile get or construct type's profile
-func GetProfile(t reflect.Type, tagKey string) *Profile {
-	val, _ := LoadOrCreate(t, tagKey, func() interface{} {
-		return NewProfile(t, tagKey)
-	})
-	return val.(*Profile)
-}
-
 func extractFields(index []int, router string, st reflect.StructField, tagKey string) []*Field {
 	tags := strings.Split(st.Tag.Get(tagKey), ",")
 	name := tags[0]
@@ -80,11 +72,10 @@ func extractFields(index []int, router string, st reflect.StructField, tagKey st
 	return []*Field{{Index: index, Name: name, Router: router, Error: err}}
 }
 
-// NewProfile construct type's profile
-func NewProfile(t reflect.Type, tagKey string) *Profile {
-	o := &Profile{}
+// init initialize profile
+func (o *Profile) init(t reflect.Type, tagkey string) *Profile {
 	for i := 0; i < t.NumField(); i++ {
-		o.Fields = append(o.Fields, extractFields([]int{i}, "", t.Field(i), tagKey)...)
+		o.Fields = append(o.Fields, extractFields([]int{i}, "", t.Field(i), tagkey)...)
 	}
 	o.Names = map[any]struct{}{}
 	for _, f := range o.Fields {

@@ -17,7 +17,7 @@ func main() {
 	f, _ := os.Create("cpu.profile")
 	pprof.StartCPUProfile(f)
 	defer pprof.StopCPUProfile()
-	source := config.ReadYaml("cases/case1/cfg.yaml") // 12326
+	source := config.ReadYaml("cases/case1/cfg.yaml") // 12714
 	opts := []resolve.Option{resolve.WithTagKey("yaml")}
 	obj, err := odi.Resolve(source, opts...)
 	log.Print(obj)

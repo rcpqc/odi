@@ -47,7 +47,7 @@ func injectStruct(ctx context.Context, dst, src reflect.Value) error {
 	if ctxGetStructFieldNameCompatibility(ctx) {
 		src = sourceConvert(src)
 	}
-	tProfile := types.GetProfile(dst.Type(), ctxGetTagKey(ctx))
+	tProfile := ctxGetProfileFactory(ctx).GetProfile(dst.Type())
 	for _, field := range tProfile.Fields {
 		if field.Error != nil {
 			return errs.New(field.Error).Prefix(field.Router)

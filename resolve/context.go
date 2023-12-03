@@ -2,11 +2,15 @@ package resolve
 
 import (
 	"context"
+	"sync"
+
+	"github.com/rcpqc/odi/types"
 )
 
 var (
-	ctxDefaultObjectKey any = "object"
-	ctxDefaultTagKey        = "odi"
+	ctxDefaultObjectKey      any = "object"
+	ctxDefaultProfileFactory     = &types.Factory{TagKey: "odi"}
+	ctxProfileFactories          = sync.Map{}
 )
 
 type ctxObject struct{}
@@ -22,15 +26,16 @@ func ctxGetObjectKey(ctx context.Context) any {
 	return val
 }
 
-type ctxTag struct{}
+type ctxProfile struct{}
 
 func ctxWithTagKey(ctx context.Context, key string) context.Context {
-	return context.WithValue(ctx, ctxTag{}, key)
+	val, _ := ctxProfileFactories.LoadOrStore(key, &types.Factory{TagKey: key})
+	return context.WithValue(ctx, ctxProfile{}, val)
 }
-func ctxGetTagKey(ctx context.Context) string {
-	val, ok := ctx.Value(ctxTag{}).(string)
+func ctxGetProfileFactory(ctx context.Context) *types.Factory {
+	val, ok := ctx.Value(ctxProfile{}).(*types.Factory)
 	if !ok {
-		return ctxDefaultTagKey
+		return ctxDefaultProfileFactory
 	}
 	return val
 }
