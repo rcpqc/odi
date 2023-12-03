@@ -32,6 +32,10 @@ type B struct {
 	WW [2]float32
 }
 
+func (o *B) Resolve(src any, def func() error) error {
+	return def()
+}
+
 func (o *B) Foo() error {
 	return nil
 }
