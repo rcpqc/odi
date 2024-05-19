@@ -30,6 +30,7 @@ type Field struct {
 	Router      string
 	InlineMap   bool
 	InlineIface bool
+	Required    bool
 	Error       error
 }
 
@@ -42,17 +43,19 @@ func extractFields(index []int, router string, st reflect.StructField, tagKey st
 	if name == "" {
 		name = snake(st.Name)
 	}
+	router = router + "." + name
 	inline := false
-	for i := 1; i < len(tags); i++ {
-		if tags[i] == "inline" {
+	required := false
+	if len(tags) >= 2 {
+		if tags[1] == "inline" {
 			inline = true
+		}
+		if tags[1] == "required" {
+			required = true
 		}
 	}
 	if !inline {
-		return []*Field{{Index: index, Name: name, Router: router + "." + name}}
-	}
-	if tags[0] != "" {
-		router = router + "." + name
+		return []*Field{{Index: index, Name: name, Router: router, Required: required}}
 	}
 	t := st.Type
 	if t.Kind() == reflect.Map && t.Key() == String {

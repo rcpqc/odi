@@ -14,6 +14,7 @@ import (
 	"github.com/rcpqc/odi/test/cases/case14"
 	"github.com/rcpqc/odi/test/cases/case15"
 	"github.com/rcpqc/odi/test/cases/case16"
+	"github.com/rcpqc/odi/test/cases/case18"
 	"github.com/rcpqc/odi/test/cases/case2"
 	"github.com/rcpqc/odi/test/cases/case5"
 	"github.com/rcpqc/odi/test/cases/case6"
@@ -139,7 +140,7 @@ func TestResolve(t *testing.T) {
 		{
 			name:   "case7.3",
 			source: map[any]any{"object": "case7_e", "ds": []map[any]any{{"aa": "fds", "yy": "tre", "object": "case7_c"}}},
-			err:    fmt.Errorf("_.ds[0]: container create -> kind(case7_c) not registered"),
+			err:    fmt.Errorf("_.ds[0].nn: container create -> kind(case7_c) not registered"),
 		},
 		{
 			name:   "case7.4",
@@ -356,6 +357,26 @@ func TestResolve(t *testing.T) {
 					&case16.C{F: 33.4},
 				},
 			},
+		},
+		{
+			name:   "case18.1",
+			source: config.ReadYaml("cases/case18/cfg1.yaml"),
+			err:    fmt.Errorf("_.x: required but not assigned"),
+		},
+		{
+			name:   "case18.2",
+			source: config.ReadYaml("cases/case18/cfg2.yaml"),
+			err:    fmt.Errorf("_.iter: required but not assigned"),
+		},
+		{
+			name:   "case18.3",
+			source: config.ReadYaml("cases/case18/cfg3.yaml"),
+			want:   &case18.B{N: &case18.A{X: 321}},
+		},
+		{
+			name:   "case18.4",
+			source: config.ReadYaml("cases/case18/cfg4.yaml"),
+			err:    fmt.Errorf("_.ia.x: required but not assigned"),
 		},
 	}
 	for _, tt := range tests {

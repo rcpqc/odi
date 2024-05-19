@@ -70,6 +70,9 @@ func injectStruct(ctx context.Context, dst, src reflect.Value) error {
 		}
 		key := reflect.ValueOf(field.Name)
 		val := src.MapIndex(key)
+		if field.Required && !val.IsValid() {
+			return errs.Newf("required but not assigned").Prefix(field.Router)
+		}
 		if !val.IsValid() {
 			continue
 		}
