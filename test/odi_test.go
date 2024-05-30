@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/rcpqc/odi"
+	"github.com/rcpqc/odi/container"
 	"github.com/rcpqc/odi/resolve"
 	"github.com/rcpqc/odi/test/cases/case1"
 	"github.com/rcpqc/odi/test/cases/case10"
@@ -41,6 +42,7 @@ func ErrorEqual(err1 error, err2 error) bool {
 }
 
 func TestResolve(t *testing.T) {
+	t.Logf("objects: %v", container.List())
 	tests := []struct {
 		name   string
 		source any

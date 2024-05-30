@@ -15,3 +15,12 @@ func Make(kind string) (any, error) {
 	}
 	return constructor(), nil
 }
+
+// List list all kinds
+func List() []string {
+	kinds := make([]string, 0, len(factory))
+	for k := range factory {
+		kinds = append(kinds, k)
+	}
+	return kinds
+}
