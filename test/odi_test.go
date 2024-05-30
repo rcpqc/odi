@@ -92,7 +92,7 @@ func TestResolve(t *testing.T) {
 			source: config.ReadYaml("cases/case4/cfg.yaml"),
 			opts:   []resolve.Option{resolve.WithTagKey("yaml")},
 			want:   nil,
-			err:    fmt.Errorf("_.ifaces[0]: container create -> kind(case4_f) not registered"),
+			err:    fmt.Errorf("_.ifaces[0]: container.make -> kind(case4_f) not registered"),
 		},
 		{
 			name:   "case5",
@@ -140,7 +140,7 @@ func TestResolve(t *testing.T) {
 		{
 			name:   "case7.3",
 			source: map[any]any{"object": "case7_e", "ds": []map[any]any{{"aa": "fds", "yy": "tre", "object": "case7_c"}}},
-			err:    fmt.Errorf("_.ds[0].nn: container create -> kind(case7_c) not registered"),
+			err:    fmt.Errorf("_.ds[0].nn: container.make -> kind(case7_c) not registered"),
 		},
 		{
 			name:   "case7.4",

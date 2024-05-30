@@ -9,7 +9,7 @@ import (
 
 // Provide register a kind of object
 func Provide(kind string, constructor func() any) {
-	container.Provide(kind, constructor)
+	container.Bind(kind, constructor)
 }
 
 // Resolve parse and construct an new object by source data

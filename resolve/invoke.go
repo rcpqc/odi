@@ -15,9 +15,9 @@ func invoke(ctx context.Context, src reflect.Value) (any, error) {
 	if err != nil {
 		return nil, errs.Newf("classify -> %v", err)
 	}
-	object, err := container.Create(kind)
+	object, err := container.Make(kind)
 	if err != nil {
-		return nil, errs.Newf("container create -> %v", err)
+		return nil, errs.Newf("container.make -> %v", err)
 	}
 	if err := inject(ctx, reflect.ValueOf(object), src); err != nil {
 		return nil, err
