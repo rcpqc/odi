@@ -21,5 +21,5 @@ type B struct {
 }
 
 type C struct {
-	IA A `odi:",inline"`
+	IA A `odi:"ia,inline"`
 }
