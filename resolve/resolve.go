@@ -31,7 +31,7 @@ func Invoke(src any, opts ...Option) (any, error) {
 	return invoke(ctx, rsrc)
 }
 
-func Object(dst, src any, opts ...Option) error {
+func Inject(dst, src any, opts ...Option) error {
 	ctx := context.Background()
 	for _, opt := range opts {
 		ctx = opt(ctx)

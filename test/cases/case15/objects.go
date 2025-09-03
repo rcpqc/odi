@@ -26,7 +26,7 @@ type Expr1 struct {
 
 func (o *Expr1) Resolve(src any, def func() error) error {
 	if err := def(); err != nil {
-		if err := resolve.Object(&o.Expr, src, resolve.WithObjectKey("object")); err != nil {
+		if err := resolve.Inject(&o.Expr, src, resolve.WithObjectKey("object")); err != nil {
 			return fmt.Errorf("illegal expr(%v)", src)
 		}
 	}
@@ -56,7 +56,7 @@ type Expr4 struct {
 }
 
 func (o *Expr4) Resolve(src any, def func() error) error {
-	return resolve.Object(&o.Expr, src, resolve.WithObjectKey("object"))
+	return resolve.Inject(&o.Expr, src, resolve.WithObjectKey("object"))
 }
 
 type Component struct {
